@@ -46,6 +46,12 @@ const tutorSchema = new mongoose.Schema(
       type: Number,
       default: 0, 
     },
+    isApproved: {
+    type: Boolean,
+    default: false
+  },
+  approvedAt: Date,
+
 
     rejectionReason: String,
 

@@ -2,9 +2,11 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import cookieParser from "cookie-parser";
-import authRoute from './routes/authRoute.js';
+import authRoute from './routes/auth.js';
 import {connectDB} from './config/db.js'
-import tutorRoute from './routes/tutorRoutes.js'
+import tutorRoute from './routes/tutor.js';
+import adminRoute from './routes/admin.js';
+
 dotenv.config()
 connectDB()
 
@@ -25,6 +27,7 @@ app.get("/",(req,res)=>{
 })
 app.use("/tutor",tutorRoute)
 app.use("/auth",authRoute)
+app.use("/admin",adminRoute)
 app.listen(port,()=>{
     console.log(`your port is running on http://localhost:${port}`)
 })

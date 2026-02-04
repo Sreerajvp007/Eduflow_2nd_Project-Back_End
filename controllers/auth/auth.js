@@ -1,13 +1,13 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import Admin from '../models/admin.js';
-import Tutor from '../models/tutor.js' ;
-import Parent from '../models/parent.js';
-import Child from '../models/child.js';
-import Otp from '../models/otp.js';
-import {generateOtp,hashOtp} from '../utils/generateOtp.js'
-import {accesstoken,refreshtoken} from '../utils/token.js'
-import sendEmail from '../utils/sendEmail.js';
+import Admin from '../../models/Admin.js';
+import Tutor from '../../models/Tutor.js' ;
+import Parent from '../../models/Parent.js';
+import Child from '../../models/Student.js';
+import Otp from '../../models/Otp.js';
+import {generateOtp,hashOtp} from '../../utils/generateOtp.js'
+import {accesstoken,refreshtoken} from '../../utils/token.js'
+import sendEmail from '../../utils/sendEmail.js';
 
 // admin login and logout
 export const adminLogin =async (req,res)=>{

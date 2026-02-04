@@ -7,9 +7,9 @@ import {
   saveIdVerification,
   getOnboardingStatus
  
-} from "../controllers/tutorController.js";
+} from "../controllers/tutor/onboarding.js";
 
-import { protect } from "../middlewares/authMiddleware.js";
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 

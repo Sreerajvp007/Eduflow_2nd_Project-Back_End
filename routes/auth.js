@@ -1,7 +1,7 @@
 import express from 'express';
 const router =express.Router();
-import {adminLogin,adminLogout,tutorSignup,tutorLogin,tutorLogout,sendParentOtp,verifyParentOtp,resendParentOtp,sendParentLoginOtp,verifyParentLoginOtp,resendParentLoginOtp,refreshAccessToken,refresh} from '../controllers/authController.js';
-import validate from '../middlewares/validateMiddleware.js';
+import {adminLogin,adminLogout,tutorSignup,tutorLogin,tutorLogout,sendParentOtp,verifyParentOtp,resendParentOtp,sendParentLoginOtp,verifyParentLoginOtp,resendParentLoginOtp,refreshAccessToken,refresh} from '../controllers/auth/auth.js';
+import validate from '../middlewares/validate.js';
 import { tutorSignupValidation,sendOtpValidation,verifyOtpValidation,resendOtpValidation,sendLoginOtpValidation,verifyLoginOtpValidation,adminLoginValidation } from '../validations/tutorValidations.js';
 
 

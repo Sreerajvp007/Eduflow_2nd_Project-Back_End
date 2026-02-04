@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const childSchema = new mongoose.Schema(
+const studentSchema = new mongoose.Schema(
   {
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -17,9 +17,16 @@ const childSchema = new mongoose.Schema(
       enum: ["English", "Malayalam"]
     },
 
-    photo: String
+    photo: String,
+    status: {
+  type: String,
+  enum: ["active", "suspended"],
+  default: "active"
+}
+
   },
+  
   { timestamps: true }
 );
 
-export default mongoose.model("Child", childSchema);
+export default mongoose.model("Student", studentSchema);

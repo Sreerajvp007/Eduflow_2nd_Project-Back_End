@@ -1,7 +1,7 @@
 
 import jwt from "jsonwebtoken";
-import Tutor from "../models/tutor.js";
-import Admin from "../models/admin.js";
+import Tutor from "../models/Tutor.js";
+import Admin from "../models/Admin.js";
 
 export const protect = (roles = []) => {
   return async (req, res, next) => {

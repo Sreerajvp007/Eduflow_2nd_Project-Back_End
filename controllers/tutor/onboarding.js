@@ -1,6 +1,6 @@
 
-import Tutor from "../models/tutor.js";
-import { calculateProfileCompletion } from "../utils/calculateCompletion.js";
+import Tutor from "../../models/Tutor.js";
+import { calculateProfileCompletion } from "../../utils/calculateCompletion.js";
 
 
 

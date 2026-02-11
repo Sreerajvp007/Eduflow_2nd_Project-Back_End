@@ -5,7 +5,7 @@ import Admin from "../models/Admin.js";
 
 export const protect = (roles = []) => {
   return async (req, res, next) => {
-    console.log("AUTH HEADER:", req.headers.authorization);
+    
     try {
       const authHeader = req.headers.authorization;
 
@@ -37,7 +37,7 @@ export const protect = (roles = []) => {
         });
       }
 
-     console.log(decoded)
+     
       if (roles.length && !roles.includes(decoded.role)) {
         return res.status(403).json({
           success: false,

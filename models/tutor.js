@@ -65,24 +65,35 @@ const tutorSchema = new mongoose.Schema(
       enum: ["STATE", "CBSE", "ICSE"],
     },
 
-    classes: {
-  type: [String],
-  enum: [
-    "Grade 1-4",
-    "Grade 5-7",
-    "Grade 8-10",
-    "Grade 11-12",
-  ],
-  default: [],
-},
+//     classes: {
+//   type: [String],
+//   enum: [
+//     "Grade 1-4",
+//     "Grade 5-7",
+//     "Grade 8-10",
+//     "Grade 11-12",
+//   ],
+//   default: [],
+// },
  
 
-    subjects: {
+//     subjects: {
+//   type: [String],
+//   enum: ["English", "Maths", "Hindi", "Social", "Chemistry"],
+//   default: [],
+// },
+subjects: {
   type: [String],
-  enum: ["English", "Maths", "Hindi", "Social", "Chemistry"],
   default: [],
 },
-
+classes: {
+  type: [String],
+  default: [],
+},
+availability: {
+  type: [String], // ["6:00 PM", "7:00 PM"]
+  default: [],
+},
 
     teachingExperience: {
       type: Number,

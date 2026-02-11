@@ -32,40 +32,31 @@ export const listStudents = async (req, res) => {
       page = 1,
       limit = 10,
     } = req.query;
-  
-  
-    const StudentQuery = {};
-    const parentQuery = {};
 
-    // Filter by grade
+    const query = {};
+
+    // 🔹 Grade filter
     if (grade) {
-      StudentQuery.grade = grade;
+      query.grade = grade;
     }
 
-    // Filter by parent status
+    // 🔹 Status filter
     if (status) {
-      parentQuery.status = status;
+      query.status = status;
     }
 
-    // Search student or parent name
-    if (search) {
-      StudentQuery.name = { $regex: search, $options: "i" };
-      parentQuery.fullName = { $regex: search, $options: "i" };
-    }
+    // 🔹 Search: student OR parent
+  if (search) {
+  query.name = { $regex: search, $options: "i" };
+}
 
-    // Get parents first (for status/search)
-    const parents = await Parent.find(parentQuery).select("_id");
-    const parentIds = parents.map((p) => p._id);
-
-    StudentQuery.parentId = { $in: parentIds };
-
-    const students = await Student.find(StudentQuery)
+    const students = await Student.find(query)
       .populate("parentId", "fullName email mobile status")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
 
-    const total = await Student.countDocuments(StudentQuery);
+    const total = await Student.countDocuments(query);
 
     res.status(200).json({
       success: true,
@@ -77,12 +68,14 @@ export const listStudents = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "Failed to fetch students",
     });
   }
 };
+
 
 
 export const getStudentDetails = async (req, res) => {

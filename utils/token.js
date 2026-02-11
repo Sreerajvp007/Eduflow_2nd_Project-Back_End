@@ -5,7 +5,7 @@ export const accesstoken =(payload)=>{
     return jwt.sign(
             payload,
             process.env.ACCESS_TOKEN_SECRET,
-            {expiresIn:"2m"}
+            {expiresIn:"59m"}
         )
     }
 export const refreshtoken =(payload)=>{

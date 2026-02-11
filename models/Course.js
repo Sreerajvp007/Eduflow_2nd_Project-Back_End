@@ -27,15 +27,9 @@ const courseSchema = new mongoose.Schema(
     },
 
     classLevel: {
-      type: String,
-      enum: [
-        "Grade 1-4",
-        "Grade 5-7",
-        "Grade 8-10",
-        "Grade 11-12",
-      ],
-      required: true,
-    },
+  type: String,   // 1–12
+  required: true
+},
 
     description: {
       type: String,
@@ -78,5 +72,7 @@ const courseSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+
 
 export default mongoose.model("Course", courseSchema);

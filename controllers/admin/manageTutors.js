@@ -1,6 +1,8 @@
 import Tutor from '../../models/Tutor.js';
 
 
+
+
 export const getPendingTutors = async (req, res) => {
   try {
     const tutors = await Tutor.find({
@@ -116,27 +118,21 @@ export const rejectTutor = async (req, res) => {
 
 export const listTutors = async (req, res) => {
   try {
-    const {
-      search,
-      status,
-      subject,
-      page = 1,
-      limit = 10,
-    } = req.query;
+    const { search, status, subject, page = 1, limit = 10 } = req.query;
 
     const query = {};
 
-    // Status filter
+    // 🔹 Status filter (active / suspended / blocked)
     if (status) {
       query.status = status;
     }
 
-    // Subject filter
+    // 🔹 Subject filter (array-safe)
     if (subject) {
-      query.subjects = subject;
+      query.subjects = { $in: [subject] };
     }
 
-    // Search (name or subject)
+    // 🔹 Search (name or subject)
     if (search) {
       query.$or = [
         { fullName: { $regex: search, $options: "i" } },
@@ -145,7 +141,9 @@ export const listTutors = async (req, res) => {
     }
 
     const tutors = await Tutor.find(query)
-      .select("fullName email subjects status isApproved onboardingStatus profileImage")
+      .select(
+        "fullName email subjects status onboardingStatus rating profileImage"
+      )
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(Number(limit));
@@ -168,6 +166,7 @@ export const listTutors = async (req, res) => {
     });
   }
 };
+
 
 
 export const updateTutorStatus = async (req, res) => {

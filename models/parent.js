@@ -35,8 +35,13 @@ const parentSchema = new mongoose.Schema(
     refreshToken: {
       type: String,
       select: false
-    }
+    },
+    isBlocked: {
+  type: Boolean,
+  default: false,
+},
   },
+  
   { timestamps: true }
 );
 

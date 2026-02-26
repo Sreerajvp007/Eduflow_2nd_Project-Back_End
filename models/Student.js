@@ -1,35 +1,3 @@
-// import mongoose from 'mongoose';
-
-// const studentSchema = new mongoose.Schema(
-//   {
-//     parentId: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "Parent",
-//       required: true
-//     },
-
-//     name: String,
-
-//     grade: String,
-
-//     medium: {
-//       type: String,
-//       enum: ["English", "Malayalam"]
-//     },
-
-//     photo: String,
-//     status: {
-//   type: String,
-//   enum: ["active", "suspended"],
-//   default: "active"
-// }
-
-//   },
-  
-//   { timestamps: true }
-// );
-
-// export default mongoose.model("Student", studentSchema);
 import mongoose from "mongoose";
 
 const studentSchema = new mongoose.Schema(
@@ -37,34 +5,36 @@ const studentSchema = new mongoose.Schema(
     parentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Parent",
-      required: true
+      required: true,
     },
 
     name: {
       type: String,
-      required: true
+      required: true,
     },
 
     grade: {
-      type: String,
-      required: true
+      type: Number,
+      required: true,
+      min: 1,
+      max: 12,
     },
 
     board: {
       type: String,
       enum: ["STATE", "CBSE", "ICSE"],
-      required: true
+      required: true,
     },
 
     profileImage: String,
 
     status: {
       type: String,
-      enum: ["active", "suspended"],
-      default: "active"
-    }
+      enum: ["active", "blocked"],
+      default: "active",
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Student", studentSchema);

@@ -1,166 +1,50 @@
-
 import Tutor from "../../models/Tutor.js";
 import { calculateProfileCompletion } from "../../utils/calculateCompletion.js";
-import Class from '../../models/Class.js'
-
-// original
-// export const saveProfileInfo = async (req, res) => {
-    
-    
-//   const tutor = await Tutor.findById(req.user.id);
-//   console.log("hii")
-
-//   if (tutor.onboardingStatus === "submitted") {
-//     return res.status(403).json({
-//       success: false,
-//       message: "Profile already submitted for review",
-//     });
-//   }
-
-//   const { bio, profileImage } = req.body;
-
-//   tutor.bio = bio;
-//   tutor.profileImage = profileImage;
-//   tutor.onboardingStep = Math.max(tutor.onboardingStep, 2);
-//   tutor.profileCompletion = calculateProfileCompletion(tutor);
-
-//   await tutor.save();
-
-//   res.json({
-//     success: true,
-//     message: "Profile information saved",
-//     result: tutor,
-//   });
-// };
-
+import Class from "../../models/Class.js";
+import { uploadToCloudinary } from "../../utils/cloudinaryUpload.js";
 
 export const saveProfileInfo = async (req, res) => {
-  const tutor = await Tutor.findById(req.user.id);
+  try {
+    const tutor = await Tutor.findById(req.user.id);
+    if (!tutor) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Tutor not found" });
+    }
 
-  if (tutor.onboardingStatus === "submitted") {
-    return res.status(403).json({
-      success: false,
-      message: "Profile already submitted",
-    });
+    if (tutor.onboardingStatus === "submitted") {
+      return res.status(403).json({
+        success: false,
+        message: "Profile already submitted",
+      });
+    }
+
+    const { bio } = req.body;
+    tutor.bio = bio;
+
+    if (req.file) {
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        "tutors/profileImages",
+      );
+      tutor.profileImage = result.secure_url;
+    }
+
+    tutor.onboardingStep = Math.max(tutor.onboardingStep, 2);
+    tutor.profileCompletion = calculateProfileCompletion(tutor);
+
+    await tutor.save();
+
+    res.json({ success: true, result: tutor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
-
-  const { bio } = req.body;
-
-  if (req.file) {
-    tutor.profileImage = req.file.path; // ✅ Cloudinary URL
-  }
-
-  tutor.bio = bio;
-  tutor.onboardingStep = Math.max(tutor.onboardingStep, 2);
-  tutor.profileCompletion = calculateProfileCompletion(tutor);
-
-  await tutor.save();
-
-  res.json({
-    success: true,
-    result: tutor,
-  });
 };
-
-
-
-
 
 export const saveTeachingInfo = async (req, res) => {
-  console.log("req.uasdadadasdasser.id")
-  const tutor = await Tutor.findById(req.user.id);
-  console.log(req.user.Id);
-  const {
-    syllabus,
-    classes,
-    subjects,
-    teachingExperience,
-    hourlyRate,
-  } = req.body;
-
-  tutor.syllabus = syllabus;
-  tutor.classes = classes;
-  tutor.subjects = subjects;
-  tutor.teachingExperience = teachingExperience;
-  tutor.hourlyRate = hourlyRate;
-
-  tutor.onboardingStep = Math.max(tutor.onboardingStep, 3);
-  tutor.profileCompletion = calculateProfileCompletion(tutor);
-
-  await tutor.save();
-
-  res.json({
-    success: true,
-    message: "Teaching information saved",
-    result: tutor,
-  });
-};
-
-
-
-// export const saveQualifications = async (req, res) => {
-//   const tutor = await Tutor.findById(req.user.id);
-
-//   tutor.qualifications = req.body.qualifications;
-//   tutor.onboardingStep = Math.max(tutor.onboardingStep, 4);
-//   tutor.profileCompletion = calculateProfileCompletion(tutor);
-
-//   await tutor.save();
-
-//   res.json({
-//     success: true,
-//     message: "Qualifications saved",
-//     result: tutor,
-//   });
-// };
-
-
-
-
-
-
-
-
-// export const saveIdVerification = async (req, res) => {
-
-  
-//   const tutor = await Tutor.findById(req.user.id);
-//   tutor.idVerification = req.body;
- 
-//   if (tutor.profileCompletion < 70) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Please complete all onboarding steps",
-//     });
-//   }
-
-//   tutor.onboardingStep = 5;
-//   tutor.profileCompletion = calculateProfileCompletion(tutor);
-  
-
-
-
-  
-
-//   tutor.onboardingStatus = "submitted";
-//   tutor.profileCompletion = 100;
-
-//   await tutor.save();
-
-//   res.json({
-//     success: true,
-//     message: "Profile submitted for admin review",
-//     result: tutor,
-//   });
-// };
-
-
-export const saveQualifications = async (req, res) => {
   try {
-    console.log("🔥 saveQualifications hit");
-    console.log("FILES:", req.files);
-
     const tutor = await Tutor.findById(req.user.id);
+
     if (!tutor) {
       return res.status(404).json({
         success: false,
@@ -168,107 +52,168 @@ export const saveQualifications = async (req, res) => {
       });
     }
 
-    const qualificationsBody = req.body.qualifications || [];
+    let { syllabus, classes, subjects, teachingExperience, hourlyRate } =
+      req.body;
 
-    // Map index → cloudinary url
-    const filesMap = {};
-
-    if (req.files && req.files.length > 0) {
-      req.files.forEach((file) => {
-        console.log("FILE RECEIVED:", file);
-
-        const match = file.fieldname.match(
-          /qualifications\[(\d+)\]\[certificate\]/
-        );
-
-        if (match) {
-          const index = match[1];
-
-          // 🔥 THIS IS THE FIX
-          filesMap[index] =
-            file.path || file.secure_url || "";
-        }
-      });
+    if (classes && !Array.isArray(classes)) {
+      classes = [classes];
     }
 
-    const qualifications = qualificationsBody.map((q, index) => ({
-      title: q.title,
-      institute: q.institute,
-      year: Number(q.year),
-      certificateUrl: filesMap[index] || "",
-      verified: false,
-    }));
+    if (subjects && !Array.isArray(subjects)) {
+      subjects = [subjects];
+    }
 
-    tutor.qualifications = qualifications;
-    tutor.onboardingStep = Math.max(tutor.onboardingStep, 4);
-    tutor.profileCompletion = 60;
+    tutor.syllabus = syllabus || tutor.syllabus;
+    tutor.classes = classes || [];
+    tutor.subjects = subjects || [];
+
+    tutor.teachingExperience = teachingExperience
+      ? Number(teachingExperience)
+      : 0;
+
+    tutor.hourlyRate = hourlyRate ? Number(hourlyRate) : 0;
+
+    tutor.onboardingStep = Math.max(tutor.onboardingStep, 3);
+    tutor.profileCompletion = calculateProfileCompletion(tutor);
 
     await tutor.save();
 
-    return res.json({
+    res.json({
       success: true,
+      message: "Teaching information saved",
       result: tutor,
     });
   } catch (error) {
-    console.error("❌ saveQualifications ERROR:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: error.message,
     });
   }
 };
 
+export const saveQualifications = async (req, res) => {
+  try {
+    const tutorId = req.user.id;
+    const files = req.files || [];
+    const bodyQualifications = req.body.qualifications || [];
 
+    const qualificationsArray = Array.isArray(bodyQualifications)
+      ? bodyQualifications
+      : [bodyQualifications];
+
+    const qualifications = qualificationsArray.map((q) => ({
+      title: q.title || "",
+      institute: q.institute || "",
+      year: q.year ? Number(q.year) : null,
+      certificateUrl: "",
+      verified: false,
+    }));
+
+    for (const file of files) {
+      const match = file.fieldname.match(
+        /qualifications\[(\d+)\]\[certificate\]/,
+      );
+
+      if (match) {
+        const index = Number(match[1]);
+
+        if (!qualifications[index]) continue;
+
+        const uploaded = await uploadToCloudinary(
+          file.buffer,
+          "tutor/qualifications",
+        );
+
+        qualifications[index].certificateUrl = uploaded?.secure_url || "";
+      }
+    }
+
+    const tutor = await Tutor.findByIdAndUpdate(
+      tutorId,
+      {
+        qualifications,
+        onboardingStep: 4,
+      },
+      { new: true },
+    );
+
+    return res.status(200).json({
+      success: true,
+      result: tutor,
+    });
+  } catch (error) {
+    console.error("Qualification Save Error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save qualifications",
+      error: error.message,
+    });
+  }
+};
 
 export const saveIdVerification = async (req, res) => {
-  const tutor = await Tutor.findById(req.user.id);
+  try {
+    const tutor = await Tutor.findById(req.user.id);
+    if (!tutor) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Tutor not found" });
+    }
 
-  const { idType, idNumber } = req.body;
+    const { idType, idNumber } = req.body;
 
-  tutor.idVerification = {
-    idType,
-    idNumber,
-    documentUrl: req.file?.path, // ✅ Cloudinary URL
-    verified: false,
-  };
+    let documentUrl = "";
 
-  tutor.onboardingStep = 5;
-  tutor.profileCompletion = 100;
-  tutor.onboardingStatus = "submitted";
+    if (req.file) {
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        "tutors/idDocuments",
+      );
 
-  await tutor.save();
+      documentUrl = result.secure_url;
+    }
 
-  res.json({
-    success: true,
-    result: tutor,
-  });
+    tutor.idVerification = {
+      idType,
+      idNumber,
+      documentUrl,
+      verified: false,
+    };
+
+    tutor.onboardingStep = 5;
+    tutor.profileCompletion = 100;
+    tutor.onboardingStatus = "submitted";
+
+    await tutor.save();
+
+    res.json({ success: true, result: tutor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
-
-
-
-
 
 export const getOnboardingStatus = async (req, res) => {
-    console.log(req.user)
-    console.log("hii")
-  const tutor = await Tutor.findById(req.user.id);
-   
-  res.json({
-    success: true,
-    result: tutor,
-  });
+  try {
+    const tutor = await Tutor.findById(req.user.id);
+    res.json({ success: true, result: tutor });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };
 
-
-
 export const getTeachingMeta = async (req, res) => {
-  const classes = await Class.find().lean();
+  try {
+    const classes = await Class.find().lean();
 
-  res.json({
-    success: true,
-    result: classes.map(c => ({
-      classGrade: c.classGrade,
-      subjectsByBoard: c.subjectsByBoard,
-    })),
-  });
+    res.json({
+      success: true,
+      result: classes.map((c) => ({
+        classGrade: c.classGrade,
+        subjectsByBoard: c.subjectsByBoard,
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
 };

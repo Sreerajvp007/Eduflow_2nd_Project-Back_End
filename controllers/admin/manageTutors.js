@@ -1,16 +1,12 @@
-import Tutor from '../../models/Tutor.js';
-
-
-
+import Tutor from "../../models/Tutor.js";
 
 export const getPendingTutors = async (req, res) => {
   try {
     const tutors = await Tutor.find({
       onboardingStatus: "submitted",
       isApproved: false,
-    })
-      .select("fullName email subjects createdAt onboardingStatus");
-
+    }).select("fullName email subjects createdAt onboardingStatus");
+    console.log(tutors);
     res.status(200).json({
       success: true,
       result: tutors,
@@ -45,7 +41,6 @@ export const getTutorDetails = async (req, res) => {
     });
   }
 };
-
 export const approveTutor = async (req, res) => {
   try {
     const tutor = await Tutor.findById(req.params.id);
@@ -57,13 +52,15 @@ export const approveTutor = async (req, res) => {
       });
     }
 
-    if (tutor.onboardingStatus === "approved") {
+    if (tutor.status === "active") {
       return res.status(400).json({
         success: false,
         message: "Tutor already approved",
       });
     }
 
+  
+    tutor.status = "active";                
     tutor.onboardingStatus = "approved";
     tutor.isApproved = true;
     tutor.approvedAt = new Date();
@@ -71,12 +68,13 @@ export const approveTutor = async (req, res) => {
 
     await tutor.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Tutor approved successfully",
     });
+
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Failed to approve tutor",
     });
@@ -114,7 +112,7 @@ export const rejectTutor = async (req, res) => {
   }
 };
 
-// 
+//
 
 export const listTutors = async (req, res) => {
   try {
@@ -122,17 +120,14 @@ export const listTutors = async (req, res) => {
 
     const query = {};
 
-    // 🔹 Status filter (active / suspended / blocked)
     if (status) {
       query.status = status;
     }
 
-    // 🔹 Subject filter (array-safe)
     if (subject) {
       query.subjects = { $in: [subject] };
     }
 
-    // 🔹 Search (name or subject)
     if (search) {
       query.$or = [
         { fullName: { $regex: search, $options: "i" } },
@@ -142,7 +137,7 @@ export const listTutors = async (req, res) => {
 
     const tutors = await Tutor.find(query)
       .select(
-        "fullName email subjects status onboardingStatus rating profileImage"
+        "fullName email subjects status onboardingStatus rating profileImage",
       )
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -167,19 +162,18 @@ export const listTutors = async (req, res) => {
   }
 };
 
-
-
 export const updateTutorStatus = async (req, res) => {
   try {
-    const { status } = req.body;
     const { id } = req.params;
+    const { status } = req.body;
+    console.log("hiii");
 
-    const allowedStatuses = ["active", "blocked", "suspended"];
+    const allowedStatuses = ["active", "suspended", "blocked"];
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid status value",
+        message: "Invalid tutor status",
       });
     }
 
@@ -192,18 +186,28 @@ export const updateTutorStatus = async (req, res) => {
       });
     }
 
+    if (tutor.status === status) {
+      return res.status(400).json({
+        success: false,
+        message: `Tutor already ${status}`,
+      });
+    }
+
     tutor.status = status;
     await tutor.save();
 
+    const updatedTutor = await Tutor.findById(id);
+
     res.status(200).json({
       success: true,
-      message: `Tutor status updated to ${status}`,
+      message: `Tutor ${status} successfully`,
+      result: updatedTutor,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
       message: "Failed to update tutor status",
     });
   }
 };
-

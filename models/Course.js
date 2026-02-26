@@ -27,13 +27,8 @@ const courseSchema = new mongoose.Schema(
     },
 
     classLevel: {
-  type: String,   // 1–12
-  required: true
-},
-
-    description: {
-      type: String,
-      maxlength: 500,
+      type: Number,
+      required: true,
     },
 
     startDate: {
@@ -42,7 +37,7 @@ const courseSchema = new mongoose.Schema(
     },
 
     timeSlot: {
-      type: String, 
+      type: String,
       required: true,
     },
 
@@ -52,15 +47,20 @@ const courseSchema = new mongoose.Schema(
       min: 0,
     },
 
+    nextPaymentDate: {
+      type: Date,
+      required: true,
+    },
+
     paymentStatus: {
       type: String,
-      enum: ["pending", "paid", "failed", "refunded"],
-      default: "paid",
+      enum: ["pending", "paid", "failed"],
+      default: "pending",
     },
 
     courseStatus: {
       type: String,
-      enum: ["active", "completed", "cancelled"],
+      enum: ["active", "paused", "completed", "cancelled"],
       default: "active",
     },
 
@@ -69,10 +69,45 @@ const courseSchema = new mongoose.Schema(
       enum: ["parent", "admin"],
       default: "parent",
     },
+
+    learningPlan: {
+      courseName: {
+        type: String,
+        trim: true,
+      },
+      description: {
+        type: String,
+        trim: true,
+      },
+      expectedDuration: {
+        type: Number,
+      },
+      tutorNotes: {
+        type: String,
+        trim: true,
+      },
+
+      strengths: [
+        {
+          type: String,
+          trim: true,
+        },
+      ],
+
+      improvements: [
+        {
+          type: String,
+          trim: true,
+        },
+      ],
+
+      isPublished: {
+        type: Boolean,
+        default: false,
+      },
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-
-
-export default mongoose.model("Course", courseSchema);
+export default mongoose.models.Course || mongoose.model("Course", courseSchema);

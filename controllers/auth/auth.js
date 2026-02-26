@@ -1,206 +1,113 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import Admin from '../../models/Admin.js';
-import Tutor from '../../models/Tutor.js' ;
-import Parent from '../../models/Parent.js';
-import Child from '../../models/Student.js';
-import Otp from '../../models/Otp.js';
-import {generateOtp,hashOtp} from '../../utils/generateOtp.js'
-import {accesstoken,refreshtoken} from '../../utils/token.js'
-import sendEmail from '../../utils/sendEmail.js';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import Admin from "../../models/Admin.js";
+import Tutor from "../../models/Tutor.js";
+import Parent from "../../models/Parent.js";
+import Student from "../../models/Student.js";
+import Otp from "../../models/Otp.js";
+import { generateOtp, hashOtp } from "../../utils/generateOtp.js";
+import { accesstoken, refreshtoken } from "../../utils/token.js";
+import sendEmail from "../../utils/sendEmail.js";
 
 // admin login and logout
-export const adminLogin =async (req,res)=>{
-    try{
-        const {userName,password} =req.body;
-        const admin = await Admin.findOne({userName});
-        if(!admin){
-            return res.status(401).json({
-                success:false,
-                message:"Invalid email or password",
-                result:null
-            })
-        }
-        
-        const isMatch =await bcrypt.compare(password,admin.password);
-        if(!isMatch){
-            return res.status(401).json({
-                success: false,
-                message: "Invalid email or password",
-                result:null
-
-            })
-        }
-        
-        const accessToken =accesstoken({id:admin._id,role:"admin"});
-        const refreshToken =refreshtoken({id:admin._id,role:"admin"});
-        admin.refreshToken =refreshToken;
-        await admin.save();
-
-        res.clearCookie("tutorRefreshToken");
-        res.clearCookie("parentRefreshToken");
-
-        res.cookie("adminRefreshToken",refreshToken,{
-            httpOnly:true,
-            secure:false,
-            samesite:"strict",
-            maxAge:7*24*60*60*100
-        });
-        return res.status(200).json({
-            success:true,
-            message:"Admin login successful",
-            result:{accessToken,role:admin.role}
-        })
-
-    }catch(err){
-        return res.status(500).json({
-            success:false,
-            message:"server error",
-            result:null
-        })
-
-    }
-}
-
-// 
-export const adminLogout =async(req,res)=>{
-    const token =req.cookies.refreshToken;
-
-    if(token){
-        await Admin.findOneAndUpdate(
-            {refreshToken: token},
-            {refreshToken:null}
-        );
-    }
-    res.clearCookie("refreshToken");
-    return res.status(200).json({
-        success: true,
-        message: "Logged out successfully",
-        result: null
-    });
-}
-
-
-
-// tutor signup,login,logout
-
-export const tutorSignup =async (req,res)=>{
-       try{
-        const { fullName, email, mobile, password, confirmPassword } = req.body;
-       const isTutorExits =await Tutor.findOne({email});
-       if(isTutorExits){
-        return res.status(409).json({
-            success:false,
-            message:"Tutor already exists",
-            result:null
-        })
-       }
-       const salt =await bcrypt.genSalt(10);
-       const hashedPassword =await bcrypt.hash(password,salt)
-       const tutor =await Tutor.create({
-        fullName,
-        email,
-        mobile,
-        password :hashedPassword,
-       });
-       
-       const accessToken =accesstoken({id: tutor._id,role:"tutor"});
-        const refreshToken =refreshtoken({id: tutor._id,role:"tutor"});
-        
-
-    tutor.refreshToken = refreshToken;
-    await tutor.save();
-    res.clearCookie("adminRefreshToken");
-    res.clearCookie("parentRefreshToken");
-    console.log(tutor.role);
-    
-    res.cookie("tutorRefreshToken", refreshToken, {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: false,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
- 
-    return res.status(201).json({
-      success: true,
-      message: "Tutor signup successful",
-      result: {
-        tutorId: tutor._id,
-        accessToken,
-        role:tutor.role,
-        onboardingStatus: tutor.onboardingStatus,
-      },
-    });
-     
-       }catch(err){
-
-       }
-
-
-
-        
-}
-
-
-export const tutorLogin = async (req, res) => {
+export const adminLogin = async (req, res) => {
   try {
-    const { email, password } = req.body;
-
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and password are required",
-        result: null
-      });
-    }
-
- 
-    const tutor = await Tutor.findOne({ email }).select("+password");
-   
-    if (!tutor) {
+    const { userName, password } = req.body;
+    const admin = await Admin.findOne({ userName });
+    if (!admin) {
       return res.status(401).json({
         success: false,
         message: "Invalid email or password",
-        result: null
+        result: null,
       });
     }
 
-    const isMatch = await bcrypt.compare(password, tutor.password);
+    const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
       return res.status(401).json({
         success: false,
         message: "Invalid email or password",
-        result: null
+        result: null,
       });
     }
 
-    if (tutor.status !== "active") {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is not active. Contact support.",
-        result: null
-      });
-    }
+    const accessToken = accesstoken({ id: admin._id, role: "admin" });
+    const refreshToken = refreshtoken({ id: admin._id, role: "admin" });
+    admin.refreshToken = refreshToken;
+    await admin.save();
 
-    
-    const accessToken =accesstoken({id: tutor._id,role:"tutor"});
-    const refreshToken =refreshtoken({id: tutor._id,role:"tutor"});
-    console.log("AFTER TOKEN");
-    
-    await Tutor.updateOne(
-  { _id: tutor._id },
-  {
-    refreshToken,
-    lastLogin: new Date(),
-  }
-);
-
-   
-  
-    res.clearCookie("adminRefreshToken");
+    res.clearCookie("tutorRefreshToken");
     res.clearCookie("parentRefreshToken");
+
+    res.cookie("adminRefreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false,
+      samesite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 100,
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Admin login successful",
+      result: { accessToken, role: admin.role },
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "server error",
+      result: null,
+    });
+  }
+};
+
+//
+export const adminLogout = async (req, res) => {
+  const token = req.cookies.refreshToken;
+
+  if (token) {
+    await Admin.findOneAndUpdate(
+      { refreshToken: token },
+      { refreshToken: null },
+    );
+  }
+  res.clearCookie("refreshToken");
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+    result: null,
+  });
+};
+
+// tutor signup,login,logout
+
+export const tutorSignup = async (req, res) => {
+  try {
+    const { fullName, email, mobile, password } = req.body;
+
+    const isTutorExists = await Tutor.findOne({ email });
+    if (isTutorExists) {
+      return res.status(409).json({
+        success: false,
+        message: "Tutor already exists",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const tutor = await Tutor.create({
+      fullName,
+      email,
+      mobile,
+      password: hashedPassword,
+      status: "pending",
+      onboardingStatus: "pending",
+    });
+
+    const accessToken = accesstoken({ id: tutor._id, role: "tutor" });
+    const refreshToken = refreshtoken({ id: tutor._id, role: "tutor" });
+
+    tutor.refreshToken = refreshToken;
+    await tutor.save();
 
     res.cookie("tutorRefreshToken", refreshToken, {
       httpOnly: true,
@@ -209,54 +116,122 @@ export const tutorLogin = async (req, res) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-console.log("tutor.role")
-    res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: "Login successful",
       result: {
         accessToken,
         tutor: {
           id: tutor._id,
           fullName: tutor.fullName,
           email: tutor.email,
-          role:tutor.role,
+          role: tutor.role,
+          status: tutor.status,
           onboardingStatus: tutor.onboardingStatus,
-          profileCompletion: tutor.profileCompletion
+          onboardingStep: tutor.onboardingStep,
+          profileCompletion: tutor.profileCompletion,
         },
-        
-      }
+      },
     });
-
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Server error",
-      result: null
     });
   }
 };
 
+export const tutorLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
-export const tutorLogout = async (req, res) => {
-  const token =req.cookies.refreshToken;
-
-    if(token){
-        await Tutor.findOneAndUpdate(
-            {refreshToken: token},
-            {refreshToken:null}
-        );
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and password are required",
+      });
     }
-    res.clearCookie("refreshToken");
-    return res.status(200).json({
-        success: true,
-        message: "Logged out successfully",
-        result: null
+
+    const tutor = await Tutor.findOne({ email }).select("+password");
+
+    if (!tutor) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    const isMatch = await bcrypt.compare(password, tutor.password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
+
+    if (tutor.status !== "active") {
+      return res.status(403).json({
+        success: false,
+        message: "Your account is pending admin approval.",
+      });
+    }
+
+    const accessToken = accesstoken({ id: tutor._id, role: "tutor" });
+    const refreshToken = refreshtoken({ id: tutor._id, role: "tutor" });
+
+    tutor.refreshToken = refreshToken;
+    tutor.lastLogin = new Date();
+    await tutor.save();
+
+    res.cookie("tutorRefreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: false,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
+
+    return res.status(200).json({
+      success: true,
+      result: {
+        accessToken,
+        tutor: {
+          id: tutor._id,
+          fullName: tutor.fullName,
+          email: tutor.email,
+          role: tutor.role,
+          status: tutor.status,
+          onboardingStatus: tutor.onboardingStatus,
+          onboardingStep: tutor.onboardingStep,
+          profileCompletion: tutor.profileCompletion,
+        },
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
 };
 
+export const tutorLogout = async (req, res) => {
+  const token = req.cookies.refreshToken;
+
+  if (token) {
+    await Tutor.findOneAndUpdate(
+      { refreshToken: token },
+      { refreshToken: null },
+    );
+  }
+  res.clearCookie("refreshToken");
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+    result: null,
+  });
+};
 
 // parent sendotp /verify otp /resendotp
-
 
 export const sendParentOtp = async (req, res) => {
   try {
@@ -266,7 +241,7 @@ export const sendParentOtp = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "All fields are required",
-        result: null
+        result: null,
       });
     }
 
@@ -275,196 +250,7 @@ export const sendParentOtp = async (req, res) => {
       return res.status(409).json({
         success: false,
         message: "Parent already exists",
-        result: null
-      });
-    }
-
-    const otp = generateOtp();
-    const hashedOtp = hashOtp(otp);
-
-    await Otp.findOneAndUpdate(
-      { email },
-      {
-        email,
-        otp:hashedOtp,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000) 
-      },
-      { upsert: true }
-    );
-
-        await sendEmail({
-    to: email,
-    subject: "Your OTP Verification Code",
-    html: `<h1>${otp}</h1>`
-    });
-    console.log(hashedOtp)
-    console.log("OTP:", otp);
-
-    return res.json({
-      success: true,
-      message: "OTP sent to email",
-      result: null
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      result: null
-    });
-  }
-};
-
-
-
-
-export const verifyParentOtp = async (req, res) => {
-  try {
-    const {fullName, email,mobile, otp, child } = req.body;
-   console.log(req.body)
-    if (!email || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and OTP are required",
-        result: null
-      });
-    }
-   const otpRecord = await Otp.findOne({ email });
-  const hashedInputOtp = hashOtp(otp);
- 
-if (!otpRecord || otpRecord.otp !== hashedInputOtp) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid OTP",
-    result: null
-  });
-}
-
-
-    if (otpRecord.expiresAt < new Date()) {
-      return res.status(400).json({
-        success: false,
-        message: "OTP expired",
-        result: null
-      });
-    }
-  
-    
-    const parent = await Parent.create({
-      fullName:fullName,
-      email,
-      mobile:mobile,
-      isVerified: true
-    });
-
-    
-    if (child) {
-      await Child.create({
-        parentId: parent._id,
-        name: child.name,
-        grade: child.grade,
-        medium: child.medium
-      });
-    }
-
-    await Otp.deleteOne({ email });
-
-    
-    const accessToken =accesstoken({id:parent._id,role:"parent"});
-    const refreshToken =refreshtoken({id:parent._id,role:"parent"});
-
-    parent.refreshToken = refreshToken;
-    await parent.save();
-
-     res.cookie("parentRefreshToken", refreshToken, {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: false,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
-
-    return res.status(201).json({
-      success: true,
-      message: "Account created successfully",
-      result: {
-        parentId: parent._id,
-        accessToken,
-      }
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      result: null
-    });
-  }
-};
-
-
-export const resendParentOtp = async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is required",
-        result: null
-      });
-    }
-
-    const otp = generateOtp();
-    const hashedOtp = hashOtp(otp);
-
-    await Otp.findOneAndUpdate(
-      { email },
-      {
-        email,
-        otp:hashedOtp,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 min
-      },
-      { upsert: true }
-    );
-
-  
-      await sendEmail({
-    to: email,
-    subject: "Your OTP Verification Code",
-    html: `<h1>${otp}</h1>`
-    });
-
-    return res.json({
-      success: true,
-      message: "OTP resent successfully",
-      result: null
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-      result: null
-    });
-  }
-};
-
-
-
-export const sendParentLoginOtp = async (req, res) => {
-  try {
-    
-    const { email } = req.body;
-    console.log(email)
-    console.log(("hiy"));
-    
-    const parent = await Parent.findOne({ email });
-
-    if (!parent) {
-      return res.status(404).json({
-        success: false,
-        message: "Parent account not found",
-        result: null
+        result: null,
       });
     }
 
@@ -476,33 +262,227 @@ export const sendParentLoginOtp = async (req, res) => {
       {
         email,
         otp: hashedOtp,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000)
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
       },
-      { upsert: true }
+      { upsert: true },
     );
 
-      await sendEmail({
-    to: email,
-    subject: "Your OTP Verification Code",
-    html: `<h1>${otp}</h1>`
+    await sendEmail({
+      to: email,
+      subject: "Your OTP Verification Code",
+      html: `<h1>${otp}</h1>`,
+    });
+    console.log(hashedOtp);
+    console.log("OTP:", otp);
+
+    return res.json({
+      success: true,
+      message: "OTP sent to email",
+      result: null,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      result: null,
+    });
+  }
+};
+
+export const verifyParentOtp = async (req, res) => {
+  try {
+    const { fullName, email, mobile, otp, child } = req.body;
+
+    if (!fullName || !email || !mobile || !otp) {
+      return res.status(400).json({
+        success: false,
+        message: "All required fields missing",
+      });
+    }
+
+    const existingParent = await Parent.findOne({ email });
+    if (existingParent) {
+      return res.status(409).json({
+        success: false,
+        message: "Parent already exists",
+      });
+    }
+
+    const otpRecord = await Otp.findOne({ email });
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP not found",
+      });
+    }
+
+    const hashedInputOtp = hashOtp(otp);
+
+    if (otpRecord.otp !== hashedInputOtp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    if (otpRecord.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    const parent = await Parent.create({
+      fullName,
+      email,
+      mobile,
+      isVerified: true,
+      status: "active",
+    });
+
+    if (child?.name) {
+      await Student.create({
+        parentId: parent._id,
+        name: child.name,
+        grade: child.grade,
+        board: child.board,
+        status: "active",
+      });
+    }
+
+    await Otp.deleteOne({ email });
+
+    const accessToken = accesstoken({
+      id: parent._id,
+      role: "parent",
+    });
+
+    const refreshToken = refreshtoken({
+      id: parent._id,
+      role: "parent",
+    });
+
+    parent.refreshToken = refreshToken;
+    await parent.save();
+
+    res.cookie("parentRefreshToken", refreshToken, {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: false,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(201).json({
+      success: true,
+      result: {
+        accessToken,
+        role: "parent",
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const resendParentOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+        result: null,
+      });
+    }
+
+    const otp = generateOtp();
+    const hashedOtp = hashOtp(otp);
+
+    await Otp.findOneAndUpdate(
+      { email },
+      {
+        email,
+        otp: hashedOtp,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min
+      },
+      { upsert: true },
+    );
+
+    await sendEmail({
+      to: email,
+      subject: "Your OTP Verification Code",
+      html: `<h1>${otp}</h1>`,
+    });
+
+    return res.json({
+      success: true,
+      message: "OTP resent successfully",
+      result: null,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Server error",
+      result: null,
+    });
+  }
+};
+
+export const sendParentLoginOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    console.log(email);
+    console.log("hiy");
+
+    const parent = await Parent.findOne({ email });
+
+    if (!parent) {
+      return res.status(404).json({
+        success: false,
+        message: "Parent account not found",
+        result: null,
+      });
+    }
+
+    const otp = generateOtp();
+    const hashedOtp = hashOtp(otp);
+
+    await Otp.findOneAndUpdate(
+      { email },
+      {
+        email,
+        otp: hashedOtp,
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+      },
+      { upsert: true },
+    );
+
+    await sendEmail({
+      to: email,
+      subject: "Your OTP Verification Code",
+      html: `<h1>${otp}</h1>`,
     });
     console.log("LOGIN OTP:", otp);
 
     return res.json({
       success: true,
       message: "OTP sent to email",
-      result: null
+      result: null,
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Server error",
-      result: null
+      result: null,
     });
   }
 };
-
 
 export const verifyParentLoginOtp = async (req, res) => {
   try {
@@ -513,7 +493,7 @@ export const verifyParentLoginOtp = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "OTP not found",
-        result: null
+        result: null,
       });
     }
 
@@ -521,7 +501,7 @@ export const verifyParentLoginOtp = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "OTP expired",
-        result: null
+        result: null,
       });
     }
 
@@ -531,7 +511,7 @@ export const verifyParentLoginOtp = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid OTP",
-        result: null
+        result: null,
       });
     }
 
@@ -541,18 +521,17 @@ export const verifyParentLoginOtp = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Account is not active",
-        result: null
+        result: null,
       });
     }
 
-    
-    const accessToken =accesstoken({id:parent._id,role:"parent"});
-    const refreshToken =refreshtoken({id:parent._id,role:"parent"});
+    const accessToken = accesstoken({ id: parent._id, role: "parent" });
+    const refreshToken = refreshtoken({ id: parent._id, role: "parent" });
 
     parent.refreshToken = refreshToken;
     await parent.save();
 
-     res.cookie("parentRefreshToken", refreshToken, {
+    res.cookie("parentRefreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "strict",
       secure: false,
@@ -567,18 +546,16 @@ export const verifyParentLoginOtp = async (req, res) => {
       result: {
         parentId: parent._id,
         accessToken,
-      }
+      },
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Server error",
-      result: null
+      result: null,
     });
   }
 };
-
 
 export const resendParentLoginOtp = async (req, res) => {
   try {
@@ -589,7 +566,7 @@ export const resendParentLoginOtp = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Parent account not found",
-        result: null
+        result: null,
       });
     }
 
@@ -601,120 +578,28 @@ export const resendParentLoginOtp = async (req, res) => {
       {
         email,
         otp: hashedOtp,
-        expiresAt: new Date(Date.now() + 5 * 60 * 1000) 
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000),
       },
-      { upsert: true }
+      { upsert: true },
     );
 
-   
-      await sendEmail({
-    to: email,
-    subject: "Your OTP Verification Code",
-    html: `<h1>${otp}</h1>`
+    await sendEmail({
+      to: email,
+      subject: "Your OTP Verification Code",
+      html: `<h1>${otp}</h1>`,
     });
     console.log("RESEND LOGIN OTP:", otp);
 
     return res.json({
       success: true,
       message: "OTP resent successfully",
-      result: null
+      result: null,
     });
-
   } catch (error) {
     return res.status(500).json({
       success: false,
       message: "Server error",
-      result: null
-    });
-  }
-};
-
-
-
-
-export const refreshAccessToken = async (req, res) => {
-  try {
-    const refreshToken = req.cookies.refreshToken;
-
-    if (!refreshToken) {
-      return res.status(401).json({
-        success: false,
-        message: "No refresh token",
-      });
-    }
-
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET
-    );
-
-    let user = null;
-    let userPayload = null;
-
-    if (decoded.role === "admin") {
-      user = await Admin.findOne({ refreshToken });
-
-      if (user) {
-        userPayload = {
-          id: user._id,
-          email: user.email,
-          role: "admin",
-        };
-      }
-    }
-
-    if (decoded.role === "tutor") {
-      user = await Tutor.findOne({ refreshToken });
-
-      if (user) {
-        userPayload = {
-          id: user._id,
-          fullName: user.fullName,
-          email: user.email,
-          onboardingStatus: user.onboardingStatus,
-          profileCompletion: user.profileCompletion,
-          role: "tutor",
-        };
-      }
-    }
-
-    if (decoded.role === "parent") {
-      user = await Parent.findOne({ refreshToken });
-
-      if (user) {
-        userPayload = {
-          id: user._id,
-          fullName: user.fullName,
-          email: user.email,
-          role: "parent",
-        };
-      }
-    }
-
-    if (!user || !userPayload) {
-      return res.status(403).json({
-        success: false,
-        message: "Invalid refresh token",
-      });
-    }
-
-    const newAccessToken = accesstoken({
-      id: user._id,
-      role: decoded.role,
-    });
-
-    return res.status(200).json({
-      success: true,
-      result: {
-        accessToken: newAccessToken,
-        role: decoded.role,
-        user: userPayload, 
-      },
-    });
-  } catch (err) {
-    return res.status(403).json({
-      success: false,
-      message: "Refresh token expired",
+      result: null,
     });
   }
 };
@@ -737,10 +622,7 @@ export const refresh = async (req, res) => {
       return res.status(401).json({ message: "No refresh token" });
     }
 
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.REFRESH_TOKEN_SECRET
-    );
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
 
     if (decoded.role !== role) {
       return res.status(403).json({ message: "Role mismatch" });
@@ -751,13 +633,76 @@ export const refresh = async (req, res) => {
       role: decoded.role,
     });
 
-    return res.json({
-      accessToken: newAccessToken,
-      role: decoded.role,
-      result:{role:decoded.role}
+    let userData = null;
+
+    if (role === "admin") {
+      const admin = await Admin.findById(decoded.id);
+      if (!admin) return res.status(403).json({ message: "User not found" });
+
+      userData = {
+        id: admin._id,
+        role: "admin",
+        email: admin.email,
+      };
+    }
+
+    if (role === "tutor") {
+      const tutor = await Tutor.findById(decoded.id);
+      if (!tutor) return res.status(403).json({ message: "User not found" });
+
+      userData = {
+        id: tutor._id,
+        fullName: tutor.fullName,
+        email: tutor.email,
+        role: "tutor",
+        status: tutor.status,
+        onboardingStatus: tutor.onboardingStatus,
+        onboardingStep: tutor.onboardingStep,
+        profileCompletion: tutor.profileCompletion,
+      };
+    }
+
+    if (role === "parent") {
+      const parent = await Parent.findById(decoded.id);
+      if (!parent) return res.status(403).json({ message: "User not found" });
+
+      userData = {
+        id: parent._id,
+        fullName: parent.fullName,
+        email: parent.email,
+        role: "parent",
+      };
+    }
+
+    return res.status(200).json({
+      success: true,
+      result: {
+        accessToken: newAccessToken,
+        role,
+        user: userData,
+      },
     });
-  } catch {
+  } catch (error) {
     return res.status(403).json({ message: "Refresh expired" });
   }
 };
 
+export const parentLogout = async (req, res) => {
+  try {
+    res.clearCookie("parentRefreshToken", {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Parent logged out successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Logout failed",
+    });
+  }
+};

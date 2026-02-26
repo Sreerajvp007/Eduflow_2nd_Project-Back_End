@@ -33,7 +33,6 @@ export const createClass = async (req, res) => {
   }
 };
 
-
 export const updateSubjectsForBoard = async (req, res) => {
   try {
     const { classId } = req.params;
@@ -64,7 +63,6 @@ export const updateSubjectsForBoard = async (req, res) => {
       });
     }
 
-    // Normalize subjects
     classDoc.subjectsByBoard[board] = subjects.map((s) => ({
       name: s.trim(),
     }));
@@ -84,7 +82,6 @@ export const updateSubjectsForBoard = async (req, res) => {
   }
 };
 
-
 export const getAllClasses = async (req, res) => {
   try {
     const classes = await Class.find().sort({ classGrade: 1 });
@@ -100,7 +97,6 @@ export const getAllClasses = async (req, res) => {
     });
   }
 };
-
 
 export const getClassDetails = async (req, res) => {
   try {
@@ -124,7 +120,6 @@ export const getClassDetails = async (req, res) => {
     });
   }
 };
-
 
 export const deleteClass = async (req, res) => {
   try {

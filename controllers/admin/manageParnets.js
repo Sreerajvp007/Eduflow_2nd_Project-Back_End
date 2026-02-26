@@ -22,45 +22,43 @@ export const getRecentCourses = async (req, res) => {
   }
 };
 
-
 export const listStudents = async (req, res) => {
   try {
-    const {
-      search,
-      grade,
-      status,
-      page = 1,
-      limit = 10,
-    } = req.query;
+    const { search, grade, status, page = 1, limit = 10 } = req.query;
 
     const query = {};
 
-    // 🔹 Grade filter
     if (grade) {
       query.grade = grade;
     }
 
-    // 🔹 Status filter
     if (status) {
       query.status = status;
     }
 
-    // 🔹 Search: student OR parent
-  if (search) {
-  query.name = { $regex: search, $options: "i" };
-}
-
-    const students = await Student.find(query)
+    let students = await Student.find(query)
       .populate("parentId", "fullName email mobile status")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .sort({ createdAt: -1 });
 
-    const total = await Student.countDocuments(query);
+    if (search) {
+      const regex = new RegExp(search, "i");
+
+      students = students.filter((student) => {
+        return (
+          regex.test(student.name) ||
+          regex.test(student.parentId?.fullName || "") ||
+          regex.test(student.parentId?.email || "")
+        );
+      });
+    }
+
+    const total = students.length;
+
+    const paginatedStudents = students.slice((page - 1) * limit, page * limit);
 
     res.status(200).json({
       success: true,
-      result: students,
+      result: paginatedStudents,
       pagination: {
         total,
         page: Number(page),
@@ -76,12 +74,12 @@ export const listStudents = async (req, res) => {
   }
 };
 
-
-
 export const getStudentDetails = async (req, res) => {
   try {
-    const student = await Student.findById(req.params.id)
-      .populate("parentId", "fullName email mobile status");
+    const student = await Student.findById(req.params.id).populate(
+      "parentId",
+      "fullName email mobile status",
+    );
 
     if (!student) {
       return res.status(404).json({
@@ -113,7 +111,7 @@ export const updateParentStatus = async (req, res) => {
         message: "Invalid status",
       });
     }
-  
+
     const parent = await Parent.findById(req.params.id);
 
     if (!parent) {
@@ -138,14 +136,12 @@ export const updateParentStatus = async (req, res) => {
   }
 };
 
-
-
 export const updateStudentStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const { id } = req.params;
 
-    const allowedStatuses = ["active", "suspended"];
+    const allowedStatuses = ["active", "blocked"];
 
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
@@ -163,20 +159,18 @@ export const updateStudentStatus = async (req, res) => {
       });
     }
 
-    
-    if (student.status === status) {
-      return res.status(400).json({
-        success: false,
-        message: `Student already ${status}`,
-      });
-    }
-
     student.status = status;
     await student.save();
+
+    const updatedStudent = await Student.findById(id).populate(
+      "parentId",
+      "fullName email mobile status",
+    );
 
     res.status(200).json({
       success: true,
       message: `Student ${status} successfully`,
+      result: updatedStudent,
     });
   } catch (error) {
     res.status(500).json({

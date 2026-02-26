@@ -1,11 +1,10 @@
-
 import jwt from "jsonwebtoken";
 import Tutor from "../models/Tutor.js";
 import Admin from "../models/Admin.js";
+import Parent from "../models/Parent.js";
 
 export const protect = (roles = []) => {
   return async (req, res, next) => {
-    
     try {
       const authHeader = req.headers.authorization;
 
@@ -18,16 +17,14 @@ export const protect = (roles = []) => {
 
       const token = authHeader.split(" ")[1];
 
-      const decoded = jwt.verify(
-        token,
-        process.env.ACCESS_TOKEN_SECRET
-      );
+      const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-      
       if (decoded.role === "tutor") {
         req.user = await Tutor.findById(decoded.id).select("-password");
       } else if (decoded.role === "admin") {
         req.user = await Admin.findById(decoded.id).select("-password");
+      } else if (decoded.role === "parent") {
+        req.user = await Parent.findById(decoded.id).select("-password");
       }
 
       if (!req.user) {
@@ -37,7 +34,14 @@ export const protect = (roles = []) => {
         });
       }
 
-     
+      if (decoded.role !== "admin" && req.user.isBlocked) {
+        return res.status(403).json({
+          success: false,
+          message: "Your account has been blocked by admin",
+          blocked: true,
+        });
+      }
+
       if (roles.length && !roles.includes(decoded.role)) {
         return res.status(403).json({
           success: false,

@@ -113,16 +113,19 @@ export const rejectTutor = async (req, res) => {
 };
 
 //
-
 export const listTutors = async (req, res) => {
   try {
-    const { search, status, subject, page = 1, limit = 10 } = req.query;
-
+    const {
+      search = "",
+      status = "",
+      subject = "",
+      page = 1,
+      limit = 3,
+    } = req.query;
+console.log("2")
     const query = {};
 
-    if (status) {
-      query.status = status;
-    }
+    if (status) query.status = status;
 
     if (subject) {
       query.subjects = { $in: [subject] };
@@ -135,13 +138,17 @@ export const listTutors = async (req, res) => {
       ];
     }
 
+    const currentPage = Number(page);
+    const perPage = Number(limit);
+    const skip = (currentPage - 1) * perPage;
+
     const tutors = await Tutor.find(query)
       .select(
-        "fullName email subjects status onboardingStatus rating profileImage",
+        "fullName email subjects status onboardingStatus rating profileImage"
       )
       .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+      .skip(skip)
+      .limit(perPage);
 
     const total = await Tutor.countDocuments(query);
 
@@ -150,8 +157,8 @@ export const listTutors = async (req, res) => {
       result: tutors,
       pagination: {
         total,
-        page: Number(page),
-        pages: Math.ceil(total / limit),
+        page: currentPage,
+        pages: Math.ceil(total / perPage),
       },
     });
   } catch (error) {

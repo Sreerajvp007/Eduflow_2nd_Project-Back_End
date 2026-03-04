@@ -6,7 +6,9 @@ import authRoute from './routes/auth.js';
 import {connectDB} from './config/db.js'
 import tutorRoute from './routes/tutor.js';
 import adminRoute from './routes/admin.js';
-import parentRoute from './routes/parent.js'
+import parentRoute from './routes/parent.js';
+import paymentRoute from './routes/payment.js'
+import "./utils/paymentCron.js";
 dotenv.config()
 connectDB()
 
@@ -33,7 +35,8 @@ app.get("/",(req,res)=>{
 app.use("/tutor",tutorRoute)
 app.use("/auth",authRoute)
 app.use("/admin",adminRoute)
-app.use("/parent",parentRoute)
+app.use("/parent",parentRoute);
+app.use("/payments",paymentRoute)
 app.listen(port,()=>{
     console.log(`your port is running on http://localhost:${port}`)
 })

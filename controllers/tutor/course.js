@@ -26,11 +26,52 @@ export const getNewCoursesForTutor = async (req, res) => {
   }
 };
 
+// export const getTutorManagedCourses = async (req, res) => {
+//   try {
+//     const tutorId = req.user.id;
+
+//     const { status } = req.query;
+
+//     const filter = {
+//       tutorId,
+//       paymentStatus: "paid",
+//       "learningPlan.isPublished": true,
+//       courseStatus: { $in: ["active", "paused", "completed"] },
+//     };
+
+//     if (status && status !== "all") {
+//       filter.courseStatus = status;
+//     }
+
+//     const courses = await Course.find(filter)
+//       .populate("studentId", "name grade")
+//       .populate("parentId", "fullName")
+//       .sort({ createdAt: -1 });
+
+//     res.json({
+//       success: true,
+//       result: courses,
+//     });
+//   } catch (err) {
+//     res.status(500).json({
+//       message: "Failed to fetch tutor courses",
+//     });
+//   }
+// };
 export const getTutorManagedCourses = async (req, res) => {
   try {
     const tutorId = req.user.id;
 
-    const { status } = req.query;
+    const {
+      page = 1,
+      limit = 3,
+      search = "",
+      status = "all",
+    } = req.query;
+
+    const currentPage = Number(page);
+    const perPage = Number(limit);
+    const skip = (currentPage - 1) * perPage;
 
     const filter = {
       tutorId,
@@ -39,18 +80,33 @@ export const getTutorManagedCourses = async (req, res) => {
       courseStatus: { $in: ["active", "paused", "completed"] },
     };
 
-    if (status && status !== "all") {
+    if (status !== "all") {
       filter.courseStatus = status;
+    }
+
+    if (search) {
+      filter.$or = [
+        { subject: { $regex: search, $options: "i" } },
+      ];
     }
 
     const courses = await Course.find(filter)
       .populate("studentId", "name grade")
       .populate("parentId", "fullName")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(perPage);
+
+    const total = await Course.countDocuments(filter);
 
     res.json({
       success: true,
       result: courses,
+      pagination: {
+        total,
+        page: currentPage,
+        pages: Math.ceil(total / perPage),
+      },
     });
   } catch (err) {
     res.status(500).json({

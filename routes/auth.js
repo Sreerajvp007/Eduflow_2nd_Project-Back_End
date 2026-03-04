@@ -1,5 +1,4 @@
 import express from "express";
-const router = express.Router();
 import {
   adminLogin,
   adminLogout,
@@ -12,36 +11,43 @@ import {
   sendParentLoginOtp,
   verifyParentLoginOtp,
   resendParentLoginOtp,
-//   refreshAccessToken,
   refresh,
   parentLogout,
 } from "../controllers/auth/auth.js";
+
 import validate from "../middlewares/validate.js";
+
 import {
-  tutorSignupValidation,
-  sendOtpValidation,
-  verifyOtpValidation,
-  resendOtpValidation,
-  sendLoginOtpValidation,
-  verifyLoginOtpValidation,
   adminLoginValidation,
-} from "../validations/tutorValidations.js";
+  tutorSignupValidation,
+  tutorLoginValidation,
+} from "../validations/auth.js";
 
-router.post("/admin/login", adminLoginValidation, validate, adminLogin);
+const router = express.Router();
+
+router.post("/admin/login", validate(adminLoginValidation), adminLogin);
+
 router.post("/admin/logout", adminLogout);
-router.post("/tutor/signup", tutorSignupValidation, validate, tutorSignup);
 
-router.post("/tutor/login", tutorLogin);
+router.post("/tutor/signup", validate(tutorSignupValidation), tutorSignup);
+
+router.post("/tutor/login", validate(tutorLoginValidation), tutorLogin);
 router.post("/tutor/logout", tutorLogout);
 
-router.post("/parent/send-otp", sendOtpValidation, validate, sendParentOtp);
-router.post("/parent/verify-otp",verifyOtpValidation,validate,verifyParentOtp);
-router.post("/parent/resend-otp",resendOtpValidation,validate,resendParentOtp);
+router.post("/parent/send-otp", sendParentOtp);
+
+router.post("/parent/verify-otp", verifyParentOtp);
+
+router.post("/parent/resend-otp", resendParentOtp);
+
 router.post("/parent/login/send-otp", sendParentLoginOtp);
-router.post("/parent/login/verify-otp",verifyLoginOtpValidation,validate,verifyParentLoginOtp);
-router.post("/parent/resend-loginOtp",sendLoginOtpValidation,validate,resendParentLoginOtp);
+
+router.post("/parent/login/verify-otp", verifyParentLoginOtp);
+
+router.post("/parent/resend-loginOtp", resendParentLoginOtp);
+
 router.post("/parent/logout", parentLogout);
 
-// router.post("/refresh-token", refreshAccessToken);
 router.get("/refresh", refresh);
+
 export default router;

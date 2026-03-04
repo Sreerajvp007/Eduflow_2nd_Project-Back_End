@@ -69,10 +69,23 @@ const tutorSchema = new mongoose.Schema(
     //   type: [String],
     //   default: [],
     // },
-    availability: {
-      type: [String],
-      default: ["6:00 PM", "7:00 PM", "8:00 PM"],
+    // availability: {
+    //   type: [String],
+    //   default: ["6:00 PM", "7:00 PM", "8:00 PM"],
+    // },
+    availability: [
+  {
+    time: {
+      type: String,
+      required: true,
     },
+    status: {
+      type: String,
+      enum: ["available", "booked"],
+      default: "available",
+    },
+  },
+],
 
     teachingExperience: {
       type: Number,
@@ -83,6 +96,15 @@ const tutorSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
+    averageRating: {
+  type: Number,
+  default: 0,
+},
+
+totalReviews: {
+  type: Number,
+  default: 0,
+},
 
     qualifications: [
       {

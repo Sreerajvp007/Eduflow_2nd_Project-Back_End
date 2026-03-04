@@ -17,7 +17,7 @@ export const adminLogin = async (req, res) => {
     if (!admin) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid username or password",
         result: null,
       });
     }
@@ -26,7 +26,7 @@ export const adminLogin = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid username or password",
         result: null,
       });
     }

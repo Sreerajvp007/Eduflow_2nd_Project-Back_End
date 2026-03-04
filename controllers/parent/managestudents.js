@@ -3,6 +3,23 @@ import Course from "../../models/Course.js";
 import Tutor from "../../models/Tutor.js";
 import Class from "../../models/Class.js";
 import Session from "../../models/Session.js";
+
+
+export const fetchStudent =async (req, res) => {
+  try {
+    const students = await Student.find({
+      parentId: req.user.id,
+      status: "active",
+    });
+
+    res.json({
+      success: true,
+      result: students,
+    });
+  } catch {
+    res.status(500).json({ message: "Failed to fetch students" });
+  }
+}
 export const addStudentByParent = async (req, res) => {
   try {
     const parentId = req.user.id;
@@ -234,10 +251,35 @@ export const createCourse = async (req, res) => {
   }
 };
 
+// export const getParentCourses = async (req, res) => {
+//   try {
+//     const parentId = req.user.id;
+//     const { studentId } = req.query;
+
+//     const filter = { parentId };
+
+//     if (studentId) {
+//       filter.studentId = studentId;
+//     }
+
+//     const courses = await Course.find(filter)
+//       .populate("studentId", "name grade")
+//       .populate("tutorId", "fullName profileImage")
+//       .sort({ createdAt: -1 });
+
+//     res.json({ success: true, result: courses });
+//   } catch (err) {
+//     res.status(500).json({ message: "Failed to fetch courses" });
+//   }
+// };
 export const getParentCourses = async (req, res) => {
   try {
     const parentId = req.user.id;
-    const { studentId } = req.query;
+    const { studentId, page = 1, limit = 3 } = req.query;
+
+    const currentPage = Number(page);
+    const perPage = Number(limit);
+    const skip = (currentPage - 1) * perPage;
 
     const filter = { parentId };
 
@@ -245,17 +287,51 @@ export const getParentCourses = async (req, res) => {
       filter.studentId = studentId;
     }
 
-    const courses = await Course.find(filter)
+    const total = await Course.countDocuments(filter);
+
+    // 🔥 Fetch all matching first (sorted by createdAt)
+    let courses = await Course.find(filter)
       .populate("studentId", "name grade")
       .populate("tutorId", "fullName profileImage")
       .sort({ createdAt: -1 });
 
-    res.json({ success: true, result: courses });
+    // 🔥 Manual priority sort (SAFE + SIMPLE)
+    const statusPriority = {
+      active: 1,
+      paused: 2,
+      completed: 3,
+    };
+
+    courses = courses.sort((a, b) => {
+      const priorityA = statusPriority[a.courseStatus] || 4;
+      const priorityB = statusPriority[b.courseStatus] || 4;
+
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+
+      // If same status → keep newest first
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    // 🔥 Apply pagination AFTER sorting
+    const paginatedCourses = courses.slice(skip, skip + perPage);
+
+    res.json({
+      success: true,
+      result: paginatedCourses,
+      pagination: {
+        total,
+        page: currentPage,
+        pages: Math.ceil(total / perPage),
+      },
+    });
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch courses" });
+    res.status(500).json({
+      message: "Failed to fetch courses",
+    });
   }
 };
-
 export const updateStudent = async (req, res) => {
   try {
     const { name, grade, board } = req.body;

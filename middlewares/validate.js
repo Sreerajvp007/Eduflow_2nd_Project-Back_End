@@ -1,21 +1,30 @@
-import { validationResult } from "express-validator";
 
-export const validate = (req, res, next) => {
-  const errors = validationResult(req);
+const validate = (schema, property = "body") => {
+  return (req, res, next) => {
+    const dataToValidate = req[property];
 
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      message: errors.array()[0].msg, 
+    const { error, value } = schema.validate(dataToValidate, {
+      abortEarly: false,     
+      allowUnknown: false,   
+      stripUnknown: true,    
     });
-  }
 
-  next();
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation Error",
+        errors: error.details.map((err) => ({
+          field: err.path.join("."),
+          message: err.message.replace(/"/g, ""),
+        })),
+      });
+    }
+
+
+    req[property] = value;
+
+    next();
+  };
 };
-
-
-
-
-
 
 export default validate;

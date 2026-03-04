@@ -22,47 +22,47 @@ export const getRecentCourses = async (req, res) => {
   }
 };
 
+
 export const listStudents = async (req, res) => {
   try {
-    const { search, grade, status, page = 1, limit = 10 } = req.query;
+    const {
+      search = "",
+      grade = "",
+      status = "",
+      page = 1,
+      limit = 3,
+    } = req.query;
+
+    const currentPage = Number(page);
+    const perPage = Number(limit);
+    const skip = (currentPage - 1) * perPage;
 
     const query = {};
 
-    if (grade) {
-      query.grade = grade;
-    }
-
-    if (status) {
-      query.status = status;
-    }
-
-    let students = await Student.find(query)
-      .populate("parentId", "fullName email mobile status")
-      .sort({ createdAt: -1 });
+    if (grade) query.grade = grade;
+    if (status) query.status = status;
 
     if (search) {
-      const regex = new RegExp(search, "i");
-
-      students = students.filter((student) => {
-        return (
-          regex.test(student.name) ||
-          regex.test(student.parentId?.fullName || "") ||
-          regex.test(student.parentId?.email || "")
-        );
-      });
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+      ];
     }
 
-    const total = students.length;
+    const students = await Student.find(query)
+      .populate("parentId", "fullName email mobile status")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(perPage);
 
-    const paginatedStudents = students.slice((page - 1) * limit, page * limit);
+    const total = await Student.countDocuments(query);
 
     res.status(200).json({
       success: true,
-      result: paginatedStudents,
+      result: students,
       pagination: {
         total,
-        page: Number(page),
-        pages: Math.ceil(total / limit),
+        page: currentPage,
+        pages: Math.ceil(total / perPage),
       },
     });
   } catch (error) {

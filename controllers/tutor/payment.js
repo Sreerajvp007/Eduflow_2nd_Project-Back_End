@@ -220,36 +220,50 @@ await course.save();
 
 
 // 
-
-
 export const getParentPayments = async (req, res) => {
   try {
-
     const parentId = req.user.id;
-    const { studentId } = req.query;
-    console.log(parentId)
-     console.log(studentId)
-     console.log("hiii")
-    const page = Number(req.query.page) || 1;
+
+    const { studentId, page = 1, search, status, month } = req.query;
+
     const limit = 10;
     const skip = (page - 1) * limit;
 
     let filter = { parentId };
 
-    if (studentId) {
+    /* STUDENT FILTER */
 
+    if (studentId) {
       const courses = await Course.find({
         parentId,
         studentId,
       }).select("_id");
 
       const courseIds = courses.map((c) => c._id);
-
       filter.courseId = { $in: courseIds };
-
     }
 
-    const payments = await Payment.find(filter)
+    /* STATUS FILTER */
+
+    if (status) {
+      filter.status = status;
+    }
+
+    /* MONTH FILTER */
+
+    if (month) {
+      const start = new Date(month);
+      const end = new Date(month);
+
+      end.setMonth(end.getMonth() + 1);
+
+      filter.billingMonth = {
+        $gte: start,
+        $lt: end,
+      };
+    }
+
+    let payments = await Payment.find(filter)
       .populate({
         path: "courseId",
         select: "subject tutorId studentId",
@@ -261,23 +275,32 @@ export const getParentPayments = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit);
-      console.log(payments)
+
+    /* SEARCH */
+
+    if (search) {
+      const term = search.toLowerCase();
+
+      payments = payments.filter(
+        (p) =>
+          p.courseId?.subject?.toLowerCase().includes(term) ||
+          p.courseId?.tutorId?.fullName?.toLowerCase().includes(term)
+      );
+    }
 
     const total = await Payment.countDocuments(filter);
 
     res.json({
       payments,
-      page,
+      page: Number(page),
       totalPages: Math.ceil(total / limit),
     });
 
   } catch (error) {
-
     console.error(error);
 
     res.status(500).json({
       message: "Failed to fetch payments",
     });
-
   }
 };

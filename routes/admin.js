@@ -26,7 +26,7 @@ import {
   deleteClass,
 } from "../controllers/admin/manageClassesSubs.js";
 
-import { getAdminDashboardStats } from "../controllers/admin/admin.js";
+import { getAdminDashboardStats,getAdminReports,getAdminReviews } from "../controllers/admin/admin.js";
 
 import validate from "../middlewares/validate.js";
 import {
@@ -35,6 +35,7 @@ import {
 } from "../validations/admin.js";
 
 import Joi from "joi";
+import { protect } from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -89,5 +90,9 @@ router.patch("/classes/:classId/subjects",validate(classIdParamValidation, "para
 
 
 router.get("/dashboard/stats", getAdminDashboardStats);
+
+router.get("/feedback/reviews", protect(["admin"]), getAdminReviews);
+
+router.get("/feedback/reports", protect(["admin"]), getAdminReports);
 
 export default router;

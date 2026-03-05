@@ -14,6 +14,8 @@ import {
   getParentProfile,
   updateParentProfile,
   deleteParentProfile,
+  addReview,
+  reportTutor
 } from "../controllers/parent/parent.js";
 
 import { protect } from "../middlewares/auth.js";
@@ -33,5 +35,9 @@ router.delete("/profile", protect(["parent"]), deleteParentProfile);
 router.put("/students/:studentId", protect(["parent"]), updateStudent);
 
 router.get("/courses/:courseId/overview",protect(["parent"]),getParentCourseOverview,);
+
+router.post("/reviews", protect(["parent"]), addReview);
+
+router.post("/reports", protect(["parent"]), reportTutor);
 
 export default router;

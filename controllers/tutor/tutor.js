@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import Course from "../../models/Course.js";
-import TutorReview from "../../models/TutorReview.js";
+
 import Tutor from "../../models/Tutor.js";
+import Review from "../../models/Review.js";
 
 
 export const getMyStudents = async (req, res) => {
@@ -150,167 +151,269 @@ export const getStudentCourses = async (req, res) => {
 };
 
 
-const updateTutorRating = async (tutorId) => {
-  const stats = await TutorReview.aggregate([
-    {
-      $match: {
-        tutorId: new mongoose.Types.ObjectId(tutorId),
-        isVisible: true,
-      },
-    },
-    {
-      $group: {
-        _id: null,
-        avgRating: { $avg: "$rating" },
-        total: { $sum: 1 },
-      },
-    },
-  ]);
+// const updateTutorRating = async (tutorId) => {
+//   const stats = await TutorReview.aggregate([
+//     {
+//       $match: {
+//         tutorId: new mongoose.Types.ObjectId(tutorId),
+//         isVisible: true,
+//       },
+//     },
+//     {
+//       $group: {
+//         _id: null,
+//         avgRating: { $avg: "$rating" },
+//         total: { $sum: 1 },
+//       },
+//     },
+//   ]);
 
-  const averageRating = stats[0]?.avgRating || 0;
-  const totalReviews = stats[0]?.total || 0;
+//   const averageRating = stats[0]?.avgRating || 0;
+//   const totalReviews = stats[0]?.total || 0;
 
-  await Tutor.findByIdAndUpdate(tutorId, {
-    averageRating,
-    totalReviews,
-  });
-};
+//   await Tutor.findByIdAndUpdate(tutorId, {
+//     averageRating,
+//     totalReviews,
+//   });
+// };
 
-/* ============================= */
-/* 1️⃣ Parent Adds Review        */
-/* ============================= */
-export const addTutorReview = async (req, res) => {
-  try {
-    const parentId = req.user.id;
-    const { tutorId, rating, review } = req.body;
+// /* ============================= */
+// /* 1️⃣ Parent Adds Review        */
+// /* ============================= */
+// export const addTutorReview = async (req, res) => {
+//   try {
+//     const parentId = req.user.id;
+//     const { tutorId, rating, review } = req.body;
 
-    const newReview = await TutorReview.create({
-      tutorId,
-      parentId,
-      rating,
-      review,
-    });
+//     const newReview = await TutorReview.create({
+//       tutorId,
+//       parentId,
+//       rating,
+//       review,
+//     });
 
-    await updateTutorRating(tutorId);
+//     await updateTutorRating(tutorId);
 
-    res.status(201).json({
-      message: "Review added successfully",
-      review: newReview,
-    });
-  } catch (error) {
-    res.status(400).json({
-      message: error.message,
-    });
-  }
-};
+//     res.status(201).json({
+//       message: "Review added successfully",
+//       review: newReview,
+//     });
+//   } catch (error) {
+//     res.status(400).json({
+//       message: error.message,
+//     });
+//   }
+// };
 
-/* ============================= */
-/* 2️⃣ Tutor View Reviews        */
-/* ============================= */
+// /* ============================= */
+// /* 2️⃣ Tutor View Reviews        */
+// /* ============================= */
+// export const getTutorReviews = async (req, res) => {
+//   try {
+//     const tutorId = req.user.id;
+
+//     const page = Number(req.query.page) || 1;
+//     const limit = 5;
+//     const skip = (page - 1) * limit;
+
+//     const reviews = await TutorReview.find({
+//       tutorId,
+//       isVisible: true,
+//     })
+//       .populate("parentId", "name")
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(limit);
+
+//     const total = await TutorReview.countDocuments({
+//       tutorId,
+//       isVisible: true,
+//     });
+
+//     res.status(200).json({
+//       reviews,
+//       total,
+//       page,
+//       totalPages: Math.ceil(total / limit),
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+
+// /* ============================= */
+// /* 3️⃣ Tutor Reply to Review     */
+// /* ============================= */
+// export const replyToReview = async (req, res) => {
+//   try {
+//     const tutorId = req.user.id;
+//     const { reviewId } = req.params;
+//     const { reply } = req.body;
+
+//     if (!reply || reply.trim() === "") {
+//       return res.status(400).json({
+//         message: "Reply cannot be empty",
+//       });
+//     }
+
+//     const reviewDoc = await TutorReview.findOne({
+//       _id: reviewId,
+//       tutorId,
+//     });
+
+//     if (!reviewDoc) {
+//       return res.status(404).json({
+//         message: "Review not found",
+//       });
+//     }
+
+//     reviewDoc.reply = reply;
+//     reviewDoc.repliedAt = new Date();
+
+//     await reviewDoc.save();
+
+//     res.status(200).json({
+//       message: "Reply added successfully",
+//       review: reviewDoc,
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+
+// /* ============================= */
+// /* 4️⃣ Parent Delete Own Review  */
+// /* ============================= */
+// export const deleteTutorReview = async (req, res) => {
+//   try {
+//     const parentId = req.user.id;
+//     const { reviewId } = req.params;
+
+//     const reviewDoc = await TutorReview.findOneAndDelete({
+//       _id: reviewId,
+//       parentId,
+//     });
+
+//     if (!reviewDoc) {
+//       return res.status(404).json({
+//         message: "Review not found",
+//       });
+//     }
+
+//     await updateTutorRating(reviewDoc.tutorId);
+
+//     res.status(200).json({
+//       message: "Review deleted successfully",
+//     });
+//   } catch (error) {
+//     res.status(500).json({
+//       message: error.message,
+//     });
+//   }
+// };
+
 export const getTutorReviews = async (req, res) => {
   try {
+
     const tutorId = req.user.id;
 
-    const page = Number(req.query.page) || 1;
-    const limit = 5;
-    const skip = (page - 1) * limit;
+    const {
+      page = 1,
+      limit = 6,
+      search = "",
+      sort = "latest"
+    } = req.query;
 
-    const reviews = await TutorReview.find({
-      tutorId,
-      isVisible: true,
-    })
-      .populate("parentId", "name")
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const currentPage = Number(page);
+    const perPage = Number(limit);
+    const skip = (currentPage - 1) * perPage;
 
-    const total = await TutorReview.countDocuments({
-      tutorId,
-      isVisible: true,
-    });
+    let query = Review.find({ tutorId })
 
-    res.status(200).json({
-      reviews,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
+      .populate("parentId", "fullName email")
+
+      .populate({
+        path: "courseId",
+        select: "subject studentId",
+        populate: {
+          path: "studentId",
+          select: "name"
+        }
+      });
+
+    // Sorting
+    if (sort === "rating") {
+      query = query.sort({ rating: -1 });
+    } else {
+      query = query.sort({ createdAt: -1 });
+    }
+
+    let reviews = await query.skip(skip).limit(perPage);
+
+    // Search filter
+    if (search) {
+
+      const searchLower = search.toLowerCase();
+
+      reviews = reviews.filter((r) => {
+
+        const parentName =
+          r.parentId?.fullName?.toLowerCase() || "";
+
+        const subject =
+          r.courseId?.subject?.toLowerCase() || "";
+
+        return (
+          parentName.includes(searchLower) ||
+          subject.includes(searchLower)
+        );
+
+      });
+    }
+
+    const totalReviews = await Review.countDocuments({ tutorId });
+
+    const avgRatingAgg = await Review.aggregate([
+  {
+    $match: {
+      tutorId: new mongoose.Types.ObjectId(tutorId)
+    }
+  },
+  {
+    $group: {
+      _id: null,
+      avg: { $avg: "$rating" }
+    }
   }
-};
+]);
 
-/* ============================= */
-/* 3️⃣ Tutor Reply to Review     */
-/* ============================= */
-export const replyToReview = async (req, res) => {
-  try {
-    const tutorId = req.user.id;
-    const { reviewId } = req.params;
-    const { reply } = req.body;
+const avgRating = avgRatingAgg.length
+  ? avgRatingAgg[0].avg
+  : 0;
 
-    if (!reply || reply.trim() === "") {
-      return res.status(400).json({
-        message: "Reply cannot be empty",
-      });
-    }
-
-    const reviewDoc = await TutorReview.findOne({
-      _id: reviewId,
-      tutorId,
+    res.json({
+      success: true,
+      result: {
+        reviews,
+        avgRating: Number(avgRating.toFixed(1)),
+        totalReviews,
+        totalPages: Math.ceil(totalReviews / perPage),
+        currentPage
+      }
     });
 
-    if (!reviewDoc) {
-      return res.status(404).json({
-        message: "Review not found",
-      });
-    }
-
-    reviewDoc.reply = reply;
-    reviewDoc.repliedAt = new Date();
-
-    await reviewDoc.save();
-
-    res.status(200).json({
-      message: "Reply added successfully",
-      review: reviewDoc,
-    });
   } catch (error) {
+
+    console.error(error);
+
     res.status(500).json({
-      message: error.message,
-    });
-  }
-};
-
-/* ============================= */
-/* 4️⃣ Parent Delete Own Review  */
-/* ============================= */
-export const deleteTutorReview = async (req, res) => {
-  try {
-    const parentId = req.user.id;
-    const { reviewId } = req.params;
-
-    const reviewDoc = await TutorReview.findOneAndDelete({
-      _id: reviewId,
-      parentId,
+      success: false,
+      message: "Failed to fetch reviews"
     });
 
-    if (!reviewDoc) {
-      return res.status(404).json({
-        message: "Review not found",
-      });
-    }
-
-    await updateTutorRating(reviewDoc.tutorId);
-
-    res.status(200).json({
-      message: "Review deleted successfully",
-    });
-  } catch (error) {
-    res.status(500).json({
-      message: error.message,
-    });
   }
 };

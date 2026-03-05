@@ -3,6 +3,7 @@ import Course from "../../models/Course.js";
 import Tutor from "../../models/Tutor.js";
 import Class from "../../models/Class.js";
 import Session from "../../models/Session.js";
+import Review from "../../models/Review.js"
 
 
 export const fetchStudent =async (req, res) => {
@@ -367,7 +368,6 @@ export const updateStudent = async (req, res) => {
     });
   }
 };
-
 export const getParentCourseOverview = async (req, res) => {
   try {
     const { courseId } = req.params;
@@ -386,16 +386,28 @@ export const getParentCourseOverview = async (req, res) => {
       });
     }
 
-    const sessions = await Session.find({ courseId }).sort({ sessionDate: 1 });
+    const sessions = await Session.find({ courseId })
+      .sort({ sessionDate: 1 });
+
+    /* ---------------- GET PARENT REVIEW ---------------- */
+
+    const parentReview = await Review.findOne({
+      courseId,
+      parentId
+    }).select("rating review createdAt");
 
     res.json({
       success: true,
       result: {
         course,
         sessions,
+        parentReview   // ⭐ added
       },
     });
+
   } catch (error) {
+    console.error("COURSE OVERVIEW ERROR:", error);
+
     res.status(500).json({
       message: "Failed to fetch course overview",
     });

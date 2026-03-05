@@ -21,7 +21,7 @@ import {
 } from "../controllers/tutor/course.js";
 
 
-import { getMyStudents,getStudentCourses,addTutorReview ,getTutorReviews,replyToReview,deleteTutorReview} from "../controllers/tutor/tutor.js";
+import { getMyStudents,getStudentCourses,getTutorReviews} from "../controllers/tutor/tutor.js";
 import { getSchedule,createSession } from "../controllers/tutor/shedule.js";
 
 import {
@@ -29,7 +29,9 @@ import {
   saveTeachingInfoValidation,
   saveQualificationsValidation,
   saveIdVerificationValidation,
+
 } from "../validations/tutor.js";
+
 
 const router = express.Router();
 
@@ -89,16 +91,22 @@ router.get("/schedule", protect(["tutor"]), getSchedule);
 
 router.post("/session", protect(["tutor"]), createSession);
 
+router.get(
+"/reviews",
+protect(["tutor"]),
+getTutorReviews
+);
+
 // 
-router.post("/", addTutorReview);
+// router.post("/", addTutorReview);
 
-// Parent deletes own review
-router.delete("/:reviewId",  deleteTutorReview);
+// // Parent deletes own review
+// router.delete("/:reviewId",  deleteTutorReview);
 
-// Tutor views reviews
-router.get("/tutor",  getTutorReviews);
+// // Tutor views reviews
+// router.get("/tutor",  getTutorReviews);
 
-// Tutor replies
-router.patch("/:reviewId/reply",  replyToReview);
+// // Tutor replies
+// router.patch("/:reviewId/reply",  replyToReview);
 
 export default router;

@@ -1,5 +1,7 @@
 import Parent from "../../models/Parent.js";
-
+import Report from "../../models/Report.js";
+import Review from "../../models/Review.js";
+import Course from "../../models/Course.js";
 export const getParentProfile = async (req, res) => {
   try {
     const parent = await Parent.findById(req.user.id).select("-password");
@@ -67,4 +69,71 @@ export const deleteParentProfile = async (req, res) => {
       message: "Delete failed",
     });
   }
+};
+
+
+export const addReview = async (req,res)=>{
+try{
+
+  console.log("rev11")
+
+const { courseId, rating, review } = req.body;
+
+const course = await Course.findById(courseId);
+
+if(!course){
+return res.status(404).json({message:"Course not found"});
+}
+
+const existing = await Review.findOne({
+courseId,
+parentId:req.user.id
+});
+
+if(existing){
+return res.status(400).json({message:"You already reviewed this tutor"});
+}
+
+const newReview = await Review.create({
+courseId,
+tutorId:course.tutorId,
+parentId:req.user.id,
+rating,
+review
+});
+
+res.json(newReview);
+
+}catch(err){
+res.status(500).json({message:"Failed to add review"});
+}
+};
+
+
+
+export const reportTutor = async (req,res)=>{
+try{
+
+    console.log("report11")
+
+const { courseId, reason } = req.body;
+
+const course = await Course.findById(courseId);
+
+if(!course){
+return res.status(404).json({message:"Course not found"});
+}
+
+const report = await Report.create({
+courseId,
+tutorId:course.tutorId,
+parentId:req.user.id,
+reason
+});
+
+res.json(report);
+
+}catch(err){
+res.status(500).json({message:"Failed to report tutor"});
+}
 };

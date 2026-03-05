@@ -236,6 +236,7 @@ export const tutorLogout = async (req, res) => {
 export const sendParentOtp = async (req, res) => {
   try {
     const { fullName, email, mobile } = req.body;
+    console.log("hiy");
 
     if (!fullName || !email || !mobile) {
       return res.status(400).json({
@@ -438,7 +439,7 @@ export const sendParentLoginOtp = async (req, res) => {
   try {
     const { email } = req.body;
     console.log(email);
-    console.log("hiy");
+    
 
     const parent = await Parent.findOne({ email });
 

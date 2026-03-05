@@ -26,7 +26,7 @@ import {
   deleteClass,
 } from "../controllers/admin/manageClassesSubs.js";
 
-import { getAdminDashboardStats,getAdminReports,getAdminReviews } from "../controllers/admin/admin.js";
+import { getAdminDashboardStats,getAdminReports,getAdminReviews,getAdminRevenueStats,getTutorPayoutRequests,markPayoutPaid,getAdminPayments } from "../controllers/admin/admin.js";
 
 import validate from "../middlewares/validate.js";
 import {
@@ -94,5 +94,14 @@ router.get("/dashboard/stats", getAdminDashboardStats);
 router.get("/feedback/reviews", protect(["admin"]), getAdminReviews);
 
 router.get("/feedback/reports", protect(["admin"]), getAdminReports);
+
+
+router.get("/revenue", protect(["admin"]), getAdminRevenueStats);
+
+router.get("/payouts", protect(["admin"]), getTutorPayoutRequests);
+
+router.patch("/payouts/:id/pay", protect(["admin"]), markPayoutPaid);
+
+router.get("/payments", protect(["admin"]), getAdminPayments);
 
 export default router;

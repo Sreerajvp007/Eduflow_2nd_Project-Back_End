@@ -21,7 +21,7 @@ import {
 } from "../controllers/tutor/course.js";
 
 
-import { getMyStudents,getStudentCourses,getTutorReviews} from "../controllers/tutor/tutor.js";
+import { getMyStudents,getStudentCourses,getTutorReviews,getTutorEarnings,getTutorPaymentHistory,requestPayout,getTutorPayouts} from "../controllers/tutor/tutor.js";
 import { getSchedule,createSession } from "../controllers/tutor/shedule.js";
 
 import {
@@ -109,4 +109,11 @@ getTutorReviews
 // // Tutor replies
 // router.patch("/:reviewId/reply",  replyToReview);
 
+
+router.get("/earnings", protect(["tutor"]), getTutorEarnings);
+
+router.get("/earnings/history", protect(["tutor"]), getTutorPaymentHistory);
+
+router.post("/earnings/request", protect(["tutor"]), requestPayout);
+router.get("/payouts", protect(["tutor"]), getTutorPayouts);
 export default router;

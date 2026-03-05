@@ -3,6 +3,7 @@ import crypto from "crypto";
 import Course from "../../models/Course.js";
 import Payment from "../../models/payment.js";
 import Student from "../../models/Student.js";
+import TutorWallet from "../../models/TutorWallet.js";
 
 
 // =============================
@@ -10,10 +11,11 @@ import Student from "../../models/Student.js";
 // =============================
 export const createOrder = async (req, res) => {
   try {
+
     const { amount } = req.body;
 
     const options = {
-      amount: amount * 100, // convert to paise
+      amount: amount * 100,
       currency: "INR",
       receipt: `receipt_${Date.now()}`,
     };
@@ -21,9 +23,15 @@ export const createOrder = async (req, res) => {
     const order = await razorpay.orders.create(options);
 
     res.json(order);
+
   } catch (error) {
+
     console.error("ORDER ERROR:", error);
-    res.status(500).json({ message: "Order creation failed" });
+
+    res.status(500).json({
+      message: "Order creation failed"
+    });
+
   }
 };
 
@@ -33,7 +41,9 @@ export const createOrder = async (req, res) => {
 // VERIFY FIRST PAYMENT
 // =============================
 export const verifyFirstPayment = async (req, res) => {
+
   try {
+
     const {
       razorpay_order_id,
       razorpay_payment_id,
@@ -41,60 +51,67 @@ export const verifyFirstPayment = async (req, res) => {
       courseData,
     } = req.body;
 
-    console.log("VERIFY BODY:", req.body);
-
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json({ message: "Missing payment fields" });
+
+      return res.status(400).json({
+        message: "Missing payment fields"
+      });
+
     }
 
-    // 🔹 Verify Razorpay signature
     const generatedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
     if (generatedSignature !== razorpay_signature) {
-      return res.status(400).json({ message: "Payment verification failed" });
+
+      return res.status(400).json({
+        message: "Payment verification failed"
+      });
+
     }
 
-    // 🔹 Get student to determine classLevel
-   const student = await Student.findById(courseData.studentId);
+    const student = await Student.findById(courseData.studentId);
 
-if (!student) {
-  return res.status(404).json({ message: "Student not found" });
-}
+    if (!student) {
 
+      return res.status(404).json({
+        message: "Student not found"
+      });
 
-// PRODUCTION (monthly billing)
-// const startDate = new Date(courseData.startDate);
-// const nextMonth = new Date(startDate);
-// nextMonth.setMonth(nextMonth.getMonth() + 1);
+    }
 
 
-// DEVELOPMENT (5 minute billing for testing)
-const nextMonth = new Date();
-nextMonth.setMinutes(nextMonth.getMinutes() + 5);
+    // DEVELOPMENT BILLING (5 MINUTES)
+    const nextMonth = new Date();
+    nextMonth.setMinutes(nextMonth.getMinutes() + 5);
 
-const course = await Course.create({
-  parentId: req.user.id,
-  studentId: courseData.studentId,
-  tutorId: courseData.tutorId,
-  subject: courseData.subject,
-  classLevel: student.grade,
-  startDate: courseData.startDate,
-  timeSlot: courseData.timeSlot,
-  monthlyFee: courseData.monthlyFee,
-  nextPaymentDate: nextMonth,
-  paymentStatus: "paid",
-  courseStatus: "active",
-  createdBy: "parent",
-});
-    // 🔹 Calculate earnings
+
+    const course = await Course.create({
+
+      parentId: req.user.id,
+      studentId: courseData.studentId,
+      tutorId: courseData.tutorId,
+      subject: courseData.subject,
+      classLevel: student.grade,
+      startDate: courseData.startDate,
+      timeSlot: courseData.timeSlot,
+      monthlyFee: courseData.monthlyFee,
+      nextPaymentDate: nextMonth,
+      paymentStatus: "paid",
+      courseStatus: "active",
+      createdBy: "parent",
+
+    });
+
+
     const adminCommission = courseData.monthlyFee * 0.2;
     const tutorEarning = courseData.monthlyFee - adminCommission;
 
-    // 🔹 Save payment record
+
     await Payment.create({
+
       courseId: course._id,
       parentId: req.user.id,
       razorpayOrderId: razorpay_order_id,
@@ -106,22 +123,46 @@ const course = await Course.create({
       adminCommission,
       tutorEarning,
       dueDate: nextMonth,
+
     });
 
+
+    // 🔹 UPDATE TUTOR WALLET
+    await TutorWallet.findOneAndUpdate(
+
+      { tutorId: courseData.tutorId },
+
+      {
+        $inc: {
+          walletBalance: tutorEarning,
+          totalEarnings: tutorEarning
+        }
+      },
+
+      { upsert: true }
+
+    );
+
+
     res.json({
+
       success: true,
       message: "Payment verified and course created",
       course,
+
     });
 
   } catch (error) {
+
     console.error("VERIFY PAYMENT ERROR:", error);
 
     res.status(500).json({
       message: "Verification failed",
       error: error.message,
     });
+
   }
+
 };
 
 
@@ -130,7 +171,9 @@ const course = await Course.create({
 // VERIFY NEXT PAYMENT
 // =============================
 export const verifyNextPayment = async (req, res) => {
+
   try {
+
     const {
       razorpay_order_id,
       razorpay_payment_id,
@@ -138,26 +181,282 @@ export const verifyNextPayment = async (req, res) => {
       courseId,
     } = req.body;
 
+
     const generatedSignature = crypto
       .createHmac("sha256", process.env.RAZORPAY_SECRET)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest("hex");
 
     if (generatedSignature !== razorpay_signature) {
-      return res.status(400).json({ message: "Payment verification failed" });
+
+      return res.status(400).json({
+        message: "Payment verification failed"
+      });
+
     }
 
-   const course = await Course.findById(courseId);
 
-if (!course) {
-  return res.status(404).json({ message: "Course not found" });
-}
+    const course = await Course.findById(courseId);
 
-/* IMPORTANT
-next payment should be calculated from
-previous due date, not today
-*/
-// ---------- PRODUCTION (monthly billing) ----------
+    if (!course) {
+
+      return res.status(404).json({
+        message: "Course not found"
+      });
+
+    }
+
+
+    const now = new Date();
+
+    const baseDate =
+      now > course.nextPaymentDate
+        ? now
+        : course.nextPaymentDate;
+
+    const nextMonth = new Date(baseDate);
+    nextMonth.setMinutes(nextMonth.getMinutes() + 5);
+
+
+    const adminCommission = course.monthlyFee * 0.2;
+    const tutorEarning = course.monthlyFee - adminCommission;
+
+
+    await Payment.create({
+
+      courseId,
+      parentId: req.user.id,
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      razorpaySignature: razorpay_signature,
+      billingMonth: new Date(),
+      amount: course.monthlyFee,
+      status: "paid",
+      adminCommission,
+      tutorEarning,
+      dueDate: nextMonth,
+
+    });
+
+
+    // 🔹 UPDATE TUTOR WALLET
+    await TutorWallet.findOneAndUpdate(
+
+      { tutorId: course.tutorId },
+
+      {
+        $inc: {
+          walletBalance: tutorEarning,
+          totalEarnings: tutorEarning
+        }
+      },
+
+      { upsert: true }
+
+    );
+
+
+    course.nextPaymentDate = nextMonth;
+    course.paymentStatus = "paid";
+    course.courseStatus = "active";
+
+    await course.save();
+
+
+    res.json({
+
+      success: true,
+      message: "Next payment verified",
+
+    });
+
+  } catch (error) {
+
+    console.error("NEXT PAYMENT ERROR:", error);
+
+    res.status(500).json({
+      message: "Verification failed",
+      error: error.message,
+    });
+
+  }
+
+};
+
+
+
+// import razorpay from "../../config/razorpay.js";
+// import crypto from "crypto";
+// import Course from "../../models/Course.js";
+// import Payment from "../../models/payment.js";
+// import Student from "../../models/Student.js";
+
+
+// // =============================
+// // CREATE RAZORPAY ORDER
+// // =============================
+// export const createOrder = async (req, res) => {
+//   try {
+//     const { amount } = req.body;
+
+//     const options = {
+//       amount: amount * 100, // convert to paise
+//       currency: "INR",
+//       receipt: `receipt_${Date.now()}`,
+//     };
+
+//     const order = await razorpay.orders.create(options);
+
+//     res.json(order);
+//   } catch (error) {
+//     console.error("ORDER ERROR:", error);
+//     res.status(500).json({ message: "Order creation failed" });
+//   }
+// };
+
+
+
+// // =============================
+// // VERIFY FIRST PAYMENT
+// // =============================
+// export const verifyFirstPayment = async (req, res) => {
+//   try {
+//     const {
+//       razorpay_order_id,
+//       razorpay_payment_id,
+//       razorpay_signature,
+//       courseData,
+//     } = req.body;
+
+//     console.log("VERIFY BODY:", req.body);
+
+//     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+//       return res.status(400).json({ message: "Missing payment fields" });
+//     }
+
+//     // 🔹 Verify Razorpay signature
+//     const generatedSignature = crypto
+//       .createHmac("sha256", process.env.RAZORPAY_SECRET)
+//       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+//       .digest("hex");
+
+//     if (generatedSignature !== razorpay_signature) {
+//       return res.status(400).json({ message: "Payment verification failed" });
+//     }
+
+//     // 🔹 Get student to determine classLevel
+//    const student = await Student.findById(courseData.studentId);
+
+// if (!student) {
+//   return res.status(404).json({ message: "Student not found" });
+// }
+
+
+// // PRODUCTION (monthly billing)
+// // const startDate = new Date(courseData.startDate);
+// // const nextMonth = new Date(startDate);
+// // nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+
+// // DEVELOPMENT (5 minute billing for testing)
+// const nextMonth = new Date();
+// nextMonth.setMinutes(nextMonth.getMinutes() + 5);
+
+// const course = await Course.create({
+//   parentId: req.user.id,
+//   studentId: courseData.studentId,
+//   tutorId: courseData.tutorId,
+//   subject: courseData.subject,
+//   classLevel: student.grade,
+//   startDate: courseData.startDate,
+//   timeSlot: courseData.timeSlot,
+//   monthlyFee: courseData.monthlyFee,
+//   nextPaymentDate: nextMonth,
+//   paymentStatus: "paid",
+//   courseStatus: "active",
+//   createdBy: "parent",
+// });
+//     // 🔹 Calculate earnings
+//     const adminCommission = courseData.monthlyFee * 0.2;
+//     const tutorEarning = courseData.monthlyFee - adminCommission;
+
+//     // 🔹 Save payment record
+//     await Payment.create({
+//       courseId: course._id,
+//       parentId: req.user.id,
+//       razorpayOrderId: razorpay_order_id,
+//       razorpayPaymentId: razorpay_payment_id,
+//       razorpaySignature: razorpay_signature,
+//       billingMonth: new Date(),
+//       amount: courseData.monthlyFee,
+//       status: "paid",
+//       adminCommission,
+//       tutorEarning,
+//       dueDate: nextMonth,
+//     });
+
+//     res.json({
+//       success: true,
+//       message: "Payment verified and course created",
+//       course,
+//     });
+
+//   } catch (error) {
+//     console.error("VERIFY PAYMENT ERROR:", error);
+
+//     res.status(500).json({
+//       message: "Verification failed",
+//       error: error.message,
+//     });
+//   }
+// };
+
+
+
+// // =============================
+// // VERIFY NEXT PAYMENT
+// // =============================
+// export const verifyNextPayment = async (req, res) => {
+//   try {
+//     const {
+//       razorpay_order_id,
+//       razorpay_payment_id,
+//       razorpay_signature,
+//       courseId,
+//     } = req.body;
+
+//     const generatedSignature = crypto
+//       .createHmac("sha256", process.env.RAZORPAY_SECRET)
+//       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+//       .digest("hex");
+
+//     if (generatedSignature !== razorpay_signature) {
+//       return res.status(400).json({ message: "Payment verification failed" });
+//     }
+
+//    const course = await Course.findById(courseId);
+
+// if (!course) {
+//   return res.status(404).json({ message: "Course not found" });
+// }
+
+// /* IMPORTANT
+// next payment should be calculated from
+// previous due date, not today
+// */
+// // ---------- PRODUCTION (monthly billing) ----------
+
+// // const now = new Date();
+
+// // const baseDate =
+// //   now > course.nextPaymentDate
+// //     ? now
+// //     : course.nextPaymentDate;
+
+// // const nextMonth = new Date(baseDate);
+// // nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+// // ---------- DEVELOPMENT (5 minute billing for testing) ----------
 
 // const now = new Date();
 
@@ -167,59 +466,47 @@ previous due date, not today
 //     : course.nextPaymentDate;
 
 // const nextMonth = new Date(baseDate);
-// nextMonth.setMonth(nextMonth.getMonth() + 1);
+// nextMonth.setMinutes(nextMonth.getMinutes() + 5);
 
-// ---------- DEVELOPMENT (5 minute billing for testing) ----------
+// const adminCommission = course.monthlyFee * 0.2;
+// const tutorEarning = course.monthlyFee - adminCommission;
 
-const now = new Date();
+// await Payment.create({
+//   courseId,
+//   parentId: req.user.id,
+//   razorpayOrderId: razorpay_order_id,
+//   razorpayPaymentId: razorpay_payment_id,
+//   razorpaySignature: razorpay_signature,
+//   billingMonth: new Date(),
+//   amount: course.monthlyFee,
+//   status: "paid",
+//   adminCommission,
+//   tutorEarning,
+//   dueDate: nextMonth,
+// });
 
-const baseDate =
-  now > course.nextPaymentDate
-    ? now
-    : course.nextPaymentDate;
+// course.nextPaymentDate = nextMonth;
+// course.paymentStatus = "paid";
+// course.courseStatus = "active";
 
-const nextMonth = new Date(baseDate);
-nextMonth.setMinutes(nextMonth.getMinutes() + 5);
+// await course.save();
+//     res.json({
+//       success: true,
+//       message: "Next payment verified",
+//     });
 
-const adminCommission = course.monthlyFee * 0.2;
-const tutorEarning = course.monthlyFee - adminCommission;
+//   } catch (error) {
+//     console.error("NEXT PAYMENT ERROR:", error);
 
-await Payment.create({
-  courseId,
-  parentId: req.user.id,
-  razorpayOrderId: razorpay_order_id,
-  razorpayPaymentId: razorpay_payment_id,
-  razorpaySignature: razorpay_signature,
-  billingMonth: new Date(),
-  amount: course.monthlyFee,
-  status: "paid",
-  adminCommission,
-  tutorEarning,
-  dueDate: nextMonth,
-});
-
-course.nextPaymentDate = nextMonth;
-course.paymentStatus = "paid";
-course.courseStatus = "active";
-
-await course.save();
-    res.json({
-      success: true,
-      message: "Next payment verified",
-    });
-
-  } catch (error) {
-    console.error("NEXT PAYMENT ERROR:", error);
-
-    res.status(500).json({
-      message: "Verification failed",
-      error: error.message,
-    });
-  }
-};
+//     res.status(500).json({
+//       message: "Verification failed",
+//       error: error.message,
+//     });
+//   }
+// };
 
 
-// 
+// dfsfdsfdsfdsfdsfdsf
 export const getParentPayments = async (req, res) => {
   try {
     const parentId = req.user.id;

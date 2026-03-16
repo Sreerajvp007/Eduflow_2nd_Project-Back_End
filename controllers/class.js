@@ -1,4 +1,4 @@
-import Class from "../../models/Class.js";
+import Class from "../models/Class.js";
 
 export const createClass = async (req, res) => {
   try {
@@ -7,11 +7,12 @@ export const createClass = async (req, res) => {
     if (!classGrade) {
       return res.status(400).json({
         success: false,
-        message: "Class grade is required",
+        message: "Class grade required",
       });
     }
 
     const exists = await Class.findOne({ classGrade });
+
     if (exists) {
       return res.status(400).json({
         success: false,
@@ -33,6 +34,22 @@ export const createClass = async (req, res) => {
   }
 };
 
+export const getAllClasses = async (req, res) => {
+  try {
+    const classes = await Class.find().sort({ classGrade: 1 });
+
+    res.json({
+      success: true,
+      result: classes,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch classes",
+    });
+  }
+};
+
 export const updateSubjectsForBoard = async (req, res) => {
   try {
     const { classId } = req.params;
@@ -44,13 +61,6 @@ export const updateSubjectsForBoard = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Invalid board",
-      });
-    }
-
-    if (!Array.isArray(subjects)) {
-      return res.status(400).json({
-        success: false,
-        message: "Subjects must be an array",
       });
     }
 
@@ -69,10 +79,10 @@ export const updateSubjectsForBoard = async (req, res) => {
 
     await classDoc.save();
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: "Subjects updated successfully",
-      result: classDoc.subjectsByBoard[board],
+      message: "Subjects updated",
+      result: classDoc,
     });
   } catch (error) {
     res.status(500).json({
@@ -82,57 +92,18 @@ export const updateSubjectsForBoard = async (req, res) => {
   }
 };
 
-export const getAllClasses = async (req, res) => {
-  try {
-    const classes = await Class.find().sort({ classGrade: 1 });
-
-    res.status(200).json({
-      success: true,
-      result: classes,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch classes",
-    });
-  }
-};
-
-export const getClassDetails = async (req, res) => {
-  try {
-    const classDoc = await Class.findById(req.params.id);
-
-    if (!classDoc) {
-      return res.status(404).json({
-        success: false,
-        message: "Class not found",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      result: classDoc,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch class",
-    });
-  }
-};
-
 export const deleteClass = async (req, res) => {
   try {
     await Class.findByIdAndDelete(req.params.id);
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: "Class deleted successfully",
+      message: "Class deleted",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Failed to delete class",
+      message: "Delete failed",
     });
   }
 };

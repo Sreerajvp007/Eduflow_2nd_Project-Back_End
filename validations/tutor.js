@@ -6,11 +6,14 @@ export const saveProfileInfoValidation = Joi.object({
 
 
 
+
 export const saveTeachingInfoValidation = Joi.object({
-  syllabus: Joi.string()
-    .valid("STATE", "CBSE", "ICSE")
+  syllabus: Joi.array()
+    .items(Joi.string().valid("STATE", "CBSE", "ICSE"))
+    .min(1)
     .required()
     .messages({
+      "array.min": "Select at least one syllabus",
       "any.required": "Syllabus is required",
       "any.only": "Invalid syllabus selected",
     }),
@@ -33,14 +36,14 @@ export const saveTeachingInfoValidation = Joi.object({
       "any.required": "Subjects are required",
     }),
 
-//   availability: Joi.array()
-//     .items(Joi.string())
-//     .min(1)
-//     .required()
-//     .messages({
-//       "array.min": "Select at least one availability slot",
-//       "any.required": "Availability is required",
-//     }),
+  availability: Joi.array()
+    .items(Joi.string())
+    .min(1)
+    .required()
+    .messages({
+      "array.min": "Select at least one availability slot",
+      "any.required": "Availability is required",
+    }),
 
   teachingExperience: Joi.number()
     .min(0)
@@ -51,16 +54,15 @@ export const saveTeachingInfoValidation = Joi.object({
       "any.required": "Teaching experience is required",
     }),
 
-  hourlyRate: Joi.number()
+  monthlyFee: Joi.number()
     .min(0)
     .required()
     .messages({
-      "number.base": "Hourly rate must be a number",
-      "number.min": "Hourly rate must be greater than or equal to 0",
-      "any.required": "Hourly rate is required",
+      "number.base": "Monthly fee must be a number",
+      "number.min": "Monthly fee must be greater than or equal to 0",
+      "any.required": "Monthly fee is required",
     }),
 });
-
 
 export const saveQualificationsValidation = Joi.object({
   qualifications: Joi.array()

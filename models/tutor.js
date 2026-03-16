@@ -53,8 +53,9 @@ const tutorSchema = new mongoose.Schema(
     bio: { type: String, maxlength: 500 },
 
     syllabus: {
-      type: String,
+      type: [String],
       enum: ["STATE", "CBSE", "ICSE"],
+      default: [],
     },
 
     subjects: {
@@ -74,37 +75,38 @@ const tutorSchema = new mongoose.Schema(
     //   default: ["6:00 PM", "7:00 PM", "8:00 PM"],
     // },
     availability: [
-  {
-    time: {
-      type: String,
-      required: true,
-    },
-    status: {
-      type: String,
-      enum: ["available", "booked"],
-      default: "available",
-    },
-  },
-],
+      {
+        time: {
+          type: String,
+          required: true,
+        },
+        status: {
+          type: String,
+          enum: ["available", "booked", "blocked"],
+          default: "available",
+        },
+      },
+    ],
 
     teachingExperience: {
       type: Number,
       min: 0,
     },
 
-    hourlyRate: {
+    monthlyFee: {
       type: Number,
       min: 0,
+      default: 0,
     },
     averageRating: {
-  type: Number,
-  default: 0,
-},
+      type: Number,
+      default: 0,
+    },
 
-totalReviews: {
-  type: Number,
-  default: 0,
-},
+    totalReviews: {
+      type: Number,
+      default: 0,
+    },
 
     qualifications: [
       {
@@ -131,6 +133,23 @@ totalReviews: {
       type: Boolean,
       default: false,
     },
+
+    bankDetails: {
+  accountHolderName: String,
+  accountNumber: String,
+  ifsc: String,
+  bankName: String,
+  upiId: String,
+
+  razorpayContactId: String,
+  razorpayFundAccountId: String,
+
+  isVerified: {
+    type: Boolean,
+    default: false
+  }
+},
+
   },
   { timestamps: true },
 );

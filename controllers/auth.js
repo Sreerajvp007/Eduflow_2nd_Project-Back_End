@@ -1,13 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import Admin from "../../models/Admin.js";
-import Tutor from "../../models/Tutor.js";
-import Parent from "../../models/Parent.js";
-import Student from "../../models/Student.js";
-import Otp from "../../models/Otp.js";
-import { generateOtp, hashOtp } from "../../utils/generateOtp.js";
-import { accesstoken, refreshtoken } from "../../utils/token.js";
-import sendEmail from "../../utils/sendEmail.js";
+import Admin from "../models/Admin.js";
+import Tutor from "../models/Tutor.js";
+import Parent from "../models/Parent.js";
+import Student from "../models/Student.js";
+import Otp from "../models/Otp.js";
+import { generateOtp, hashOtp } from "../utils/generateOtp.js";
+import { accesstoken, refreshtoken } from "../utils/token.js";
+import sendEmail from "../utils/sendEmail.js";
 
 // admin login and logout
 export const adminLogin = async (req, res) => {
@@ -48,7 +48,16 @@ export const adminLogin = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: "Admin login successful",
-      result: { accessToken, role: admin.role },
+      result: {
+        accessToken,
+        admin: {
+          id: admin._id,
+          fullName: admin.fullName,
+          userName: admin.userName,
+          email: admin.email,
+          role: admin.role,
+        },
+      },
     });
   } catch (err) {
     return res.status(500).json({
@@ -59,7 +68,6 @@ export const adminLogin = async (req, res) => {
   }
 };
 
-//
 export const adminLogout = async (req, res) => {
   const token = req.cookies.refreshToken;
 
@@ -169,12 +177,12 @@ export const tutorLogin = async (req, res) => {
       });
     }
 
-    if (tutor.status !== "active") {
-      return res.status(403).json({
-        success: false,
-        message: "Your account is pending admin approval.",
-      });
-    }
+    // if (tutor.status !== "active") {
+    //   return res.status(403).json({
+    //     success: false,
+    //     message: "Your account is pending admin approval.",
+    //   });
+    // }
 
     const accessToken = accesstoken({ id: tutor._id, role: "tutor" });
     const refreshToken = refreshtoken({ id: tutor._id, role: "tutor" });
@@ -236,7 +244,6 @@ export const tutorLogout = async (req, res) => {
 export const sendParentOtp = async (req, res) => {
   try {
     const { fullName, email, mobile } = req.body;
-    console.log("hiy");
 
     if (!fullName || !email || !mobile) {
       return res.status(400).json({
@@ -246,7 +253,10 @@ export const sendParentOtp = async (req, res) => {
       });
     }
 
-    const existingParent = await Parent.findOne({ email });
+    const existingParent = await Parent.findOne({
+      email,
+      isDeleted: false,
+    });
     if (existingParent) {
       return res.status(409).json({
         success: false,
@@ -255,7 +265,8 @@ export const sendParentOtp = async (req, res) => {
       });
     }
 
-    const otp = generateOtp();
+    // const otp = generateOtp();
+    const otp = "123456";
     const hashedOtp = hashOtp(otp);
 
     await Otp.findOneAndUpdate(
@@ -438,10 +449,11 @@ export const resendParentOtp = async (req, res) => {
 export const sendParentLoginOtp = async (req, res) => {
   try {
     const { email } = req.body;
-    console.log(email);
-    
 
-    const parent = await Parent.findOne({ email });
+    const parent = await Parent.findOne({
+      email,
+      isDeleted: false,
+    });
 
     if (!parent) {
       return res.status(404).json({
@@ -516,7 +528,10 @@ export const verifyParentLoginOtp = async (req, res) => {
       });
     }
 
-    const parent = await Parent.findOne({ email });
+    const parent = await Parent.findOne({
+      email,
+      isDeleted: false,
+    });
 
     if (!parent || parent.status !== "active") {
       return res.status(403).json({
@@ -642,8 +657,10 @@ export const refresh = async (req, res) => {
 
       userData = {
         id: admin._id,
-        role: "admin",
+        fullName: admin.fullName,
+        userName: admin.userName,
         email: admin.email,
+        role: "admin",
       };
     }
 
@@ -660,11 +677,15 @@ export const refresh = async (req, res) => {
         onboardingStatus: tutor.onboardingStatus,
         onboardingStep: tutor.onboardingStep,
         profileCompletion: tutor.profileCompletion,
+        profileImage: tutor.profileImage,
       };
     }
 
     if (role === "parent") {
-      const parent = await Parent.findById(decoded.id);
+      const parent = await Parent.findOne({
+        _id: decoded.id,
+        isDeleted: false,
+      });
       if (!parent) return res.status(403).json({ message: "User not found" });
 
       userData = {

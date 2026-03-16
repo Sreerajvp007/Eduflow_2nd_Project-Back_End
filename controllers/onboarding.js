@@ -1,7 +1,7 @@
-import Tutor from "../../models/Tutor.js";
-import { calculateProfileCompletion } from "../../utils/calculateCompletion.js";
-import Class from "../../models/Class.js";
-import { uploadToCloudinary } from "../../utils/cloudinaryUpload.js";
+import Tutor from "../models/Tutor.js";
+import Class from "../models/Class.js";
+import { calculateProfileCompletion } from "../utils/calculateCompletion.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 export const saveProfileInfo = async (req, res) => {
   try {
@@ -52,18 +52,22 @@ export const saveTeachingInfo = async (req, res) => {
       });
     }
 
-    let { syllabus, classes, subjects, teachingExperience, hourlyRate } =
-      req.body;
+    let {
+      syllabus,
+      classes,
+      subjects,
+      teachingExperience,
+      monthlyFee,
+      availability,
+    } = req.body;
 
-    if (classes && !Array.isArray(classes)) {
-      classes = [classes];
-    }
+    if (syllabus && !Array.isArray(syllabus)) syllabus = [syllabus];
+    if (classes && !Array.isArray(classes)) classes = [classes];
+    if (subjects && !Array.isArray(subjects)) subjects = [subjects];
+    if (availability && !Array.isArray(availability))
+      availability = [availability];
 
-    if (subjects && !Array.isArray(subjects)) {
-      subjects = [subjects];
-    }
-
-    tutor.syllabus = syllabus || tutor.syllabus;
+    tutor.syllabus = syllabus || [];
     tutor.classes = classes || [];
     tutor.subjects = subjects || [];
 
@@ -71,7 +75,14 @@ export const saveTeachingInfo = async (req, res) => {
       ? Number(teachingExperience)
       : 0;
 
-    tutor.hourlyRate = hourlyRate ? Number(hourlyRate) : 0;
+    tutor.monthlyFee = monthlyFee ? Number(monthlyFee) : 0;
+
+    if (availability) {
+      tutor.availability = availability.map((time) => ({
+        time,
+        status: "available",
+      }));
+    }
 
     tutor.onboardingStep = Math.max(tutor.onboardingStep, 3);
     tutor.profileCompletion = calculateProfileCompletion(tutor);

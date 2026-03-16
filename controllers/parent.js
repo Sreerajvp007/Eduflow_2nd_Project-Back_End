@@ -1,12 +1,163 @@
-import Student from "../../models/Student.js";
-import Course from "../../models/Course.js";
-import Tutor from "../../models/Tutor.js";
-import Class from "../../models/Class.js";
-import Session from "../../models/Session.js";
-import Review from "../../models/Review.js"
+import Parent from "../models/Parent.js";
+import Tutor from "../models/Tutor.js";
+import Student from "../models/Student.js";
+import Course from "../models/Course.js";
+import Session from "../models/Session.js";
+import Class from "../models/Class.js";
+import Report from "../models/Report.js";
+import Review from "../models/Review.js";
 
+export const getParentProfile = async (req, res) => {
+  try {
+    const parent = await Parent.findById(req.user.id).select("-password");
 
-export const fetchStudent =async (req, res) => {
+    if (!parent) {
+      return res.status(404).json({
+        success: false,
+        message: "Parent not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      result: parent,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
+  }
+};
+
+export const updateParentProfile = async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+
+    const parent = await Parent.findById(req.user.id);
+
+    if (!parent) {
+      return res.status(404).json({
+        success: false,
+        message: "Parent not found",
+      });
+    }
+
+    parent.fullName = name || parent.name;
+    parent.mobile = phone || parent.phone;
+
+    await parent.save();
+
+    res.json({
+      success: true,
+      result: parent,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Update failed",
+    });
+  }
+};
+
+export const deleteParentProfile = async (req, res) => {
+  try {
+    await Parent.findByIdAndUpdate(req.user.id, {
+      isDeleted: true,
+      refreshToken: null,
+    });
+
+    res.clearCookie("refreshToken");
+
+    res.json({
+      success: true,
+      message: "Profile deleted successfully. Logged out.",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Delete failed",
+    });
+  }
+};
+
+// review&report
+export const addReview = async (req, res) => {
+  try {
+    const { courseId, rating, review } = req.body;
+
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const existing = await Review.findOne({
+      courseId,
+      parentId: req.user.id,
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        message: "You already reviewed this tutor",
+      });
+    }
+
+    // create review
+    const newReview = await Review.create({
+      courseId,
+      tutorId: course.tutorId,
+      parentId: req.user.id,
+      rating,
+      review,
+    });
+
+    // get all tutor reviews
+    const reviews = await Review.find({ tutorId: course.tutorId });
+
+    const totalReviews = reviews.length;
+
+    const avgRating =
+      reviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews;
+
+    // update tutor
+    await Tutor.findByIdAndUpdate(course.tutorId, {
+      averageRating: avgRating,
+      totalReviews: totalReviews,
+    });
+
+    res.json(newReview);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to add review" });
+  }
+};
+
+export const reportTutor = async (req, res) => {
+  try {
+    const { courseId, reason } = req.body;
+
+    const course = await Course.findById(courseId);
+
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    const report = await Report.create({
+      courseId,
+      tutorId: course.tutorId,
+      parentId: req.user.id,
+      reason,
+    });
+
+    res.json(report);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to report tutor" });
+  }
+};
+
+// students
+export const fetchStudent = async (req, res) => {
   try {
     const students = await Student.find({
       parentId: req.user.id,
@@ -20,7 +171,8 @@ export const fetchStudent =async (req, res) => {
   } catch {
     res.status(500).json({ message: "Failed to fetch students" });
   }
-}
+};
+
 export const addStudentByParent = async (req, res) => {
   try {
     const parentId = req.user.id;
@@ -56,6 +208,7 @@ export const addStudentByParent = async (req, res) => {
   }
 };
 
+// course-puchase
 export const getSubjectsForStudent = async (req, res) => {
   try {
     const parentId = req.user.id;
@@ -86,15 +239,14 @@ export const getSubjectsForStudent = async (req, res) => {
     }
 
     const boardSubjects = classDoc.subjectsByBoard?.[student.board];
-    console.log(boardSubjects);
+
     if (!boardSubjects) {
       return res.json({
         success: true,
         result: [],
       });
     }
-    console.log(parentId);
-    console.log(boardSubjects);
+
     res.json({
       success: true,
       result: boardSubjects.map((s) => s.name),
@@ -139,7 +291,7 @@ export const getTutorsForSubject = async (req, res) => {
       status: "active",
       isApproved: true,
     }).select(
-      "fullName teachingExperience hourlyRate profileImage availability",
+      "fullName teachingExperience hourlyRate profileImage availability monthlyFee",
     );
 
     res.json({
@@ -252,27 +404,7 @@ export const createCourse = async (req, res) => {
   }
 };
 
-// export const getParentCourses = async (req, res) => {
-//   try {
-//     const parentId = req.user.id;
-//     const { studentId } = req.query;
-
-//     const filter = { parentId };
-
-//     if (studentId) {
-//       filter.studentId = studentId;
-//     }
-
-//     const courses = await Course.find(filter)
-//       .populate("studentId", "name grade")
-//       .populate("tutorId", "fullName profileImage")
-//       .sort({ createdAt: -1 });
-
-//     res.json({ success: true, result: courses });
-//   } catch (err) {
-//     res.status(500).json({ message: "Failed to fetch courses" });
-//   }
-// };
+// courses
 export const getParentCourses = async (req, res) => {
   try {
     const parentId = req.user.id;
@@ -290,13 +422,11 @@ export const getParentCourses = async (req, res) => {
 
     const total = await Course.countDocuments(filter);
 
-    // 🔥 Fetch all matching first (sorted by createdAt)
     let courses = await Course.find(filter)
       .populate("studentId", "name grade")
       .populate("tutorId", "fullName profileImage")
       .sort({ createdAt: -1 });
 
-    // 🔥 Manual priority sort (SAFE + SIMPLE)
     const statusPriority = {
       active: 1,
       paused: 2,
@@ -311,11 +441,9 @@ export const getParentCourses = async (req, res) => {
         return priorityA - priorityB;
       }
 
-      // If same status → keep newest first
       return new Date(b.createdAt) - new Date(a.createdAt);
     });
 
-    // 🔥 Apply pagination AFTER sorting
     const paginatedCourses = courses.slice(skip, skip + perPage);
 
     res.json({
@@ -337,7 +465,6 @@ export const updateStudent = async (req, res) => {
   try {
     const { name, grade, board } = req.body;
     const { studentId } = req.params;
-    console.log(grade);
 
     const student = await Student.findOne({
       _id: studentId,
@@ -386,14 +513,11 @@ export const getParentCourseOverview = async (req, res) => {
       });
     }
 
-    const sessions = await Session.find({ courseId })
-      .sort({ sessionDate: 1 });
-
-    /* ---------------- GET PARENT REVIEW ---------------- */
+    const sessions = await Session.find({ courseId }).sort({ sessionDate: 1 });
 
     const parentReview = await Review.findOne({
       courseId,
-      parentId
+      parentId,
     }).select("rating review createdAt");
 
     res.json({
@@ -401,15 +525,70 @@ export const getParentCourseOverview = async (req, res) => {
       result: {
         course,
         sessions,
-        parentReview   // ⭐ added
+        parentReview,
       },
     });
-
   } catch (error) {
     console.error("COURSE OVERVIEW ERROR:", error);
 
     res.status(500).json({
       message: "Failed to fetch course overview",
+    });
+  }
+};
+
+export const getParentSessions = async (req, res) => {
+  try {
+    const parentId = req.user.id;
+
+    const status = req.query.status;
+    const page = Number(req.query.page) || 1;
+    const limit = 10;
+
+    const skip = (page - 1) * limit;
+
+    const parentCourses = await Course.find({ parentId }).select(
+      "_id studentId subject timeSlot",
+    );
+
+    const courseIds = parentCourses.map((c) => c._id);
+
+    const query = { courseId: { $in: courseIds } };
+
+    if (status) query.status = status;
+
+    const sessions = await Session.find(query)
+
+      .populate({
+        path: "courseId",
+        select: "subject timeSlot studentId",
+        populate: {
+          path: "studentId",
+          select: "name",
+        },
+      })
+
+      .populate("tutorId", "fullName profileImage")
+
+      .sort({ sessionDate: 1 })
+
+      .skip(skip)
+
+      .limit(limit);
+
+    const total = await Session.countDocuments(query);
+
+    res.json({
+      success: true,
+      sessions,
+      page,
+      totalPages: Math.ceil(total / limit),
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      message: "Failed to fetch sessions",
     });
   }
 };

@@ -87,19 +87,15 @@ const courseSchema = new mongoose.Schema(
         trim: true,
       },
 
-      strengths: [
-        {
-          type: String,
-          trim: true,
-        },
-      ],
+      strengths: {
+  type: String,
+  default: "",
+},
 
-      improvements: [
-        {
-          type: String,
-          trim: true,
-        },
-      ],
+improvements: {
+  type: String,
+  default: "",
+},
 
       isPublished: {
         type: Boolean,

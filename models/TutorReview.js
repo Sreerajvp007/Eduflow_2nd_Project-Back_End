@@ -45,7 +45,7 @@ const tutorReviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Prevent duplicate review per parent per tutor
+
 tutorReviewSchema.index(
   { tutorId: 1, parentId: 1 },
   { unique: true }

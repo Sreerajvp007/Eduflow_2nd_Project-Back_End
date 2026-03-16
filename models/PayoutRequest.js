@@ -1,36 +1,28 @@
+
+
 import mongoose from "mongoose";
 
-const payoutRequestSchema = new mongoose.Schema(
-{
-  tutorId:{
-    type:mongoose.Schema.Types.ObjectId,
-    ref:"Tutor",
-    required:true
-  },
+const payoutRequestSchema = new mongoose.Schema({
 
-  amount:{
-    type:Number,
-    required:true
-  },
-
-  method:{
-    type:String,
-    enum:["bank","upi","wallet"],
-    required:true
-  },
-
-  notes:{
-    type:String
-  },
-
-  status:{
-    type:String,
-    enum:["pending","approved","paid","rejected"],
-    default:"pending"
-  }
-
+tutorId:{
+type:mongoose.Schema.Types.ObjectId,
+ref:"Tutor"
 },
-{timestamps:true}
-);
+
+amount:Number,
+
+method:String,
+
+notes:String,
+
+status:{
+type:String,
+enum:["pending","processing","paid","failed"],
+default:"pending"
+},
+
+razorpayPayoutId:String
+
+},{timestamps:true})
 
 export default mongoose.model("PayoutRequest",payoutRequestSchema);

@@ -1,107 +1,131 @@
-
-
 import express from "express";
+import validate from "../middlewares/validate.js";
+import { protect } from "../middlewares/auth.js";
 import {
+  getAdminDashboardStats,
+  getAdminReports,
+  getAdminReviews,
+  // createClass,
+  // updateSubjectsForBoard,
+  // getAllClasses,
+  // getClassDetails,
+  // deleteClass,
+  getRecentCourses,
+  listStudents,
+  getStudentDetails,
+  updateParentStatus,
+  updateStudentStatus,
   getPendingTutors,
   getTutorDetails,
   approveTutor,
   rejectTutor,
   listTutors,
   updateTutorStatus,
-} from "../controllers/admin/manageTutors.js";
-
+  // getPlatformSettings,
+  // updatePlatformSettings,
+  getSettings,
+  updateSettings,
+  getAdminAnalytics,
+  markReportSolved,
+  getProfileEditRequests,
+  approveProfileEdit,
+  rejectProfileEdit
+  
+} from "../controllers/admin.js";
 import {
-  getRecentCourses,
-  listStudents,
-  getStudentDetails,
-  updateParentStatus,
-  updateStudentStatus,
-} from "../controllers/admin/manageParnets.js";
-
-import {
-  createClass,
-  updateSubjectsForBoard,
-  getAllClasses,
-  getClassDetails,
-  deleteClass,
-} from "../controllers/admin/manageClassesSubs.js";
-
-import { getAdminDashboardStats,getAdminReports,getAdminReviews,getAdminRevenueStats,getTutorPayoutRequests,markPayoutPaid,getAdminPayments } from "../controllers/admin/admin.js";
-
-import validate from "../middlewares/validate.js";
+  getAdminRevenueStats,
+  getTutorPayoutRequests,
+  markPayoutPaid,
+  getAdminPayments,
+} from "../controllers/payment.js";
 import {
   updateTutorStatusValidation,
-  createClassValidation,
 } from "../validations/admin.js";
 
-import Joi from "joi";
-import { protect } from "../middlewares/auth.js";
+
+
+
+import {
+createClass,
+getAllClasses,
+updateSubjectsForBoard,
+deleteClass
+} from "../controllers/class.js";
 
 const router = express.Router();
-
-const idParamValidation = Joi.object({
-  id: Joi.string().hex().length(24).required(),
-});
-
-const classIdParamValidation = Joi.object({
-  classId: Joi.string().hex().length(24).required(),
-});
+router.post("/classes",createClass);
+router.get("/classes",getAllClasses);
+router.put("/classes/:classId/subjects",updateSubjectsForBoard);
+router.delete("/classes/:id",deleteClass);
 
 
 
-router.get("/tutors/pending", getPendingTutors);
-
-router.get("/tutors/:id",validate(idParamValidation, "params"),getTutorDetails,);
-
-router.patch("/tutors/:id/approve",validate(idParamValidation, "params"),approveTutor,);
-
-router.patch("/tutors/:id/reject",validate(idParamValidation, "params"),rejectTutor,);
-
-router.get("/tutors", listTutors);
-
-router.patch("/tutors/:id/status",validate(idParamValidation, "params"),validate(updateTutorStatusValidation),updateTutorStatus,);
 
 
+router.get("/tutors/pending",protect(["admin"]), getPendingTutors);
+router.get("/tutors/:id",protect(["admin"]), getTutorDetails);
+router.patch("/tutors/:id/approve",protect(["admin"]), approveTutor);
+router.patch("/tutors/:id/reject",protect(["admin"]), rejectTutor);
+router.get("/tutors",protect(["admin"]), listTutors);
+router.patch(
+  "/tutors/:id/status",
+  validate(updateTutorStatusValidation),
+  updateTutorStatus,
+);
 
-router.get("/courses/recent", getRecentCourses);
+router.get("/courses/recent",protect(["admin"]), getRecentCourses);
+router.get("/students",protect(["admin"]), listStudents);
+router.get("/students/:id",protect(["admin"]), getStudentDetails);
+router.patch("/parent/:id/status",protect(["admin"]), updateParentStatus);
+router.put("/students/:id/status",protect(["admin"]), updateStudentStatus);
 
 
-
-router.get("/students", listStudents);
-
-router.get("/students/:id",validate(idParamValidation, "params"),getStudentDetails,);
-
-router.patch("/parent/:id/status",validate(idParamValidation, "params"),updateParentStatus,);
-
-router.put("/students/:id/status",validate(idParamValidation, "params"),updateStudentStatus,);
-
-
-
-router.post("/classes", validate(createClassValidation), createClass);
-
-router.get("/classes", getAllClasses);
-
-router.get("/classes/:id",validate(idParamValidation, "params"),getClassDetails,);
-
-router.delete("/classes/:id",validate(idParamValidation, "params"),deleteClass,);
-
-router.patch("/classes/:classId/subjects",validate(classIdParamValidation, "params"),updateSubjectsForBoard,);
+// router.post("/classes",protect(["admin"]), createClass);
+// router.get("/classes",protect(["admin"]), getAllClasses);
+// router.get("/classes/:id",protect(["admin"]), getClassDetails);
+// router.delete("/classes/:id",protect(["admin"]), deleteClass);
+// router.patch("/classes/:classId/subjects",protect(["admin"]), updateSubjectsForBoard);
 
 
 
-router.get("/dashboard/stats", getAdminDashboardStats);
-
+router.get("/dashboard/stats",protect(["admin"]), getAdminDashboardStats);
 router.get("/feedback/reviews", protect(["admin"]), getAdminReviews);
-
 router.get("/feedback/reports", protect(["admin"]), getAdminReports);
+router.patch(
+  "/feedback/reports/:id/solve",
+ protect(["admin"]),
+  markReportSolved
+);
 
 
 router.get("/revenue", protect(["admin"]), getAdminRevenueStats);
-
 router.get("/payouts", protect(["admin"]), getTutorPayoutRequests);
-
 router.patch("/payouts/:id/pay", protect(["admin"]), markPayoutPaid);
-
 router.get("/payments", protect(["admin"]), getAdminPayments);
 
+// router.get("/settings", protect(["admin"]), getPlatformSettings);
+
+// router.put("/settings", protect(["admin"]), updatePlatformSettings);
+router.get("/analytics", protect(["admin"]), getAdminAnalytics);
+
+router.get(
+  "/profile-edit-requests",
+  protect(["admin"]),
+  getProfileEditRequests
+);
+
+router.patch(
+  "/profile-edit/:requestId/approve",
+  protect(["admin"]),
+  approveProfileEdit
+);
+
+router.patch(
+  "/profile-edit/:requestId/reject",
+  protect(["admin"]),
+  rejectProfileEdit
+);
+router.get("/settings",  protect(["admin"]),getSettings);
+
+router.put("/settings", protect(["admin"]), updateSettings);
 export default router;

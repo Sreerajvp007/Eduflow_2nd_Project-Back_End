@@ -1,7 +1,7 @@
 
 
 import cron from "node-cron";
-import Payment from "../models/payment.js";
+import Payment from "../models/Payment.js";
 import TutorWallet from "../models/TutorWallet.js";
 
 console.log("Tutor earning release cron started");

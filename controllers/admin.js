@@ -1123,7 +1123,7 @@ export const streamAdminNotifications = (req, res) => {
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:4000");
+res.setHeader("Access-Control-Allow-Origin", process.env.CLIENT_URL);
 
   const send = (data) => {
     res.write(`data: ${JSON.stringify(data)}\n\n`);

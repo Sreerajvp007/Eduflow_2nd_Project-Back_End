@@ -33,6 +33,7 @@ import {
   createSession,
   getTutorSessions,
   cancelSession,
+  resumeSession,
   deleteSession,
   updateSessionStatus,
   startSession,
@@ -41,6 +42,7 @@ import {
   submitProfileEditRequest,
   getProfileEditRequestStatus,
   getTutorDashboard,
+  
 } from "../controllers/tutor.js";
 
 import {
@@ -118,6 +120,7 @@ router.get("/payouts", protect(["tutor"]), getTutorPayouts);
 router.get("/sessions", protect(["tutor"]), getTutorSessions);
 router.post("/sessions/create", protect(["tutor"]), createSession);
 router.patch("/sessions/:id/cancel", protect(["tutor"]), cancelSession);
+router.patch("/sessions/:id/resume", protect(["tutor"]), resumeSession);
 router.delete("/sessions/:id", protect(["tutor"]), deleteSession);
 router.patch(
   "/session/:sessionId/status",

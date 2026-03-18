@@ -6,6 +6,7 @@ import Session from "../models/Session.js";
 import Class from "../models/Class.js";
 import Report from "../models/Report.js";
 import Review from "../models/Review.js";
+import eventBus from "../utils/eventBus.js";
 
 export const getParentProfile = async (req, res) => {
   try {
@@ -591,4 +592,36 @@ export const getParentSessions = async (req, res) => {
       message: "Failed to fetch sessions",
     });
   }
+};
+
+export const streamParentSessions = (req, res) => {
+  console.log("jjjj");
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:4000");
+  res.flushHeaders();
+
+  console.log("✅ SSE CONNECTED");
+
+  const send = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  const heartbeat = setInterval(() => {
+    res.write(`: ping\n\n`);
+  }, 20000);
+
+  const handler = (data) => {
+    console.log("🔥 EVENT RECEIVED IN SSE");
+    send({ type: "SESSION_STARTED", ...data });
+  };
+
+  eventBus.on("sessionStarted", handler);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    eventBus.off("sessionStarted", handler);
+  });
 };

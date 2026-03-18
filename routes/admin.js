@@ -29,8 +29,11 @@ import {
   markReportSolved,
   getProfileEditRequests,
   approveProfileEdit,
-  rejectProfileEdit
-  
+  rejectProfileEdit,
+  getParents,
+  getParentDetails,
+  streamAdminNotifications,
+  getFilterLists,
 } from "../controllers/admin.js";
 import {
   getAdminRevenueStats,
@@ -38,47 +41,37 @@ import {
   markPayoutPaid,
   getAdminPayments,
 } from "../controllers/payment.js";
-import {
-  updateTutorStatusValidation,
-} from "../validations/admin.js";
-
-
-
+import { updateTutorStatusValidation } from "../validations/admin.js";
 
 import {
-createClass,
-getAllClasses,
-updateSubjectsForBoard,
-deleteClass
+  createClass,
+  getAllClasses,
+  updateSubjectsForBoard,
+  deleteClass,
 } from "../controllers/class.js";
 
 const router = express.Router();
-router.post("/classes",createClass);
-router.get("/classes",getAllClasses);
-router.put("/classes/:classId/subjects",updateSubjectsForBoard);
-router.delete("/classes/:id",deleteClass);
+router.post("/classes", createClass);
+router.get("/classes", getAllClasses);
+router.put("/classes/:classId/subjects", updateSubjectsForBoard);
+router.delete("/classes/:id", deleteClass);
 
-
-
-
-
-router.get("/tutors/pending",protect(["admin"]), getPendingTutors);
-router.get("/tutors/:id",protect(["admin"]), getTutorDetails);
-router.patch("/tutors/:id/approve",protect(["admin"]), approveTutor);
-router.patch("/tutors/:id/reject",protect(["admin"]), rejectTutor);
-router.get("/tutors",protect(["admin"]), listTutors);
+router.get("/tutors/pending", protect(["admin"]), getPendingTutors);
+router.get("/tutors/:id", protect(["admin"]), getTutorDetails);
+router.patch("/tutors/:id/approve", protect(["admin"]), approveTutor);
+router.patch("/tutors/:id/reject", protect(["admin"]), rejectTutor);
+router.get("/tutors", protect(["admin"]), listTutors);
 router.patch(
   "/tutors/:id/status",
   validate(updateTutorStatusValidation),
   updateTutorStatus,
 );
 
-router.get("/courses/recent",protect(["admin"]), getRecentCourses);
-router.get("/students",protect(["admin"]), listStudents);
-router.get("/students/:id",protect(["admin"]), getStudentDetails);
-router.patch("/parent/:id/status",protect(["admin"]), updateParentStatus);
-router.put("/students/:id/status",protect(["admin"]), updateStudentStatus);
-
+router.get("/courses/recent", protect(["admin"]), getRecentCourses);
+router.get("/students", protect(["admin"]), listStudents);
+router.get("/students/:id", protect(["admin"]), getStudentDetails);
+// router.patch("/parent/:id/status",protect(["admin"]), updateParentStatus);
+router.put("/students/:id/status", protect(["admin"]), updateStudentStatus);
 
 // router.post("/classes",protect(["admin"]), createClass);
 // router.get("/classes",protect(["admin"]), getAllClasses);
@@ -86,17 +79,14 @@ router.put("/students/:id/status",protect(["admin"]), updateStudentStatus);
 // router.delete("/classes/:id",protect(["admin"]), deleteClass);
 // router.patch("/classes/:classId/subjects",protect(["admin"]), updateSubjectsForBoard);
 
-
-
-router.get("/dashboard/stats",protect(["admin"]), getAdminDashboardStats);
+router.get("/dashboard/stats", protect(["admin"]), getAdminDashboardStats);
 router.get("/feedback/reviews", protect(["admin"]), getAdminReviews);
 router.get("/feedback/reports", protect(["admin"]), getAdminReports);
 router.patch(
   "/feedback/reports/:id/solve",
- protect(["admin"]),
-  markReportSolved
+  protect(["admin"]),
+  markReportSolved,
 );
-
 
 router.get("/revenue", protect(["admin"]), getAdminRevenueStats);
 router.get("/payouts", protect(["admin"]), getTutorPayoutRequests);
@@ -111,21 +101,28 @@ router.get("/analytics", protect(["admin"]), getAdminAnalytics);
 router.get(
   "/profile-edit-requests",
   protect(["admin"]),
-  getProfileEditRequests
+  getProfileEditRequests,
 );
 
 router.patch(
   "/profile-edit/:requestId/approve",
   protect(["admin"]),
-  approveProfileEdit
+  approveProfileEdit,
 );
 
 router.patch(
   "/profile-edit/:requestId/reject",
   protect(["admin"]),
-  rejectProfileEdit
+  rejectProfileEdit,
 );
-router.get("/settings",  protect(["admin"]),getSettings);
+router.get("/settings", protect(["admin"]), getSettings);
 
 router.put("/settings", protect(["admin"]), updateSettings);
+
+router.get("/parents", protect(["admin"]), getParents);
+router.put("/parents/:id/status", protect(["admin"]), updateParentStatus);
+router.get("/parents/:id", protect(["admin"]), getParentDetails);
+router.get("/notifications/stream", streamAdminNotifications);
+router.get("/filter-lists", protect(["admin"]), getFilterLists);
+
 export default router;

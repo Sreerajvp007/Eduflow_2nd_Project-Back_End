@@ -138,3 +138,64 @@ export const parentSignupValidation = Joi.object({
         "Enter a valid 10-digit mobile number",
     }),
 });
+
+
+const email = Joi.string().email().required();
+
+const mobile = Joi.string()
+  .pattern(/^[6-9]\d{9}$/) // Indian mobile format
+  .required()
+  .messages({
+    "string.pattern.base": "Mobile must be a valid 10-digit Indian number",
+  });
+
+const otp = Joi.string()
+  .length(6)
+  .pattern(/^\d+$/)
+  .required()
+  .messages({
+    "string.length": "OTP must be 6 digits",
+    "string.pattern.base": "OTP must contain only numbers",
+  });
+
+/**
+ * REGISTER FLOW
+ */
+
+// Send OTP (register)
+export const sendParentOtpSchema = Joi.object({
+  fullName: Joi.string().min(3).max(50).required(),
+  email,
+  mobile,
+});
+
+// Verify OTP (register)
+export const verifyParentOtpSchema = Joi.object({
+  email,
+  otp,
+});
+
+// Resend OTP (register)
+export const resendParentOtpSchema = Joi.object({
+  email,
+});
+
+/**
+ * LOGIN FLOW
+ */
+
+// Send OTP (login)
+export const sendParentLoginOtpSchema = Joi.object({
+  email,
+});
+
+// Verify OTP (login)
+export const verifyParentLoginOtpSchema = Joi.object({
+  email,
+  otp,
+});
+
+// Resend OTP (login)
+export const resendParentLoginOtpSchema = Joi.object({
+  email,
+});

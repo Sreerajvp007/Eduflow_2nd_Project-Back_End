@@ -8,6 +8,7 @@ import Class from "../models/Class.js";
 import PlatformSettings from "../models/PlatformSettings.js";
 import Payment from "../models/payment.js";
 import TutorProfileEditRequest from "../models/TutorProfileEditRequest.js";
+import eventBus from "../utils/eventBus.js";
 
 export const getAdminDashboardStats = async (req, res) => {
   try {
@@ -48,27 +49,36 @@ export const getAdminDashboardStats = async (req, res) => {
 
 export const getAdminReports = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search = "" } = req.query;
+    const {
+      page = 1,
+      limit = 5,
+      search = "",
+      tutorId = "",
+      parentId = "",
+    } = req.query;
 
     const currentPage = Number(page);
     const perPage = Number(limit);
     const skip = (currentPage - 1) * perPage;
 
-    let query = Report.find()
+   
+    const queryObj = {};
 
+    if (tutorId) queryObj.tutorId = tutorId;
+    if (parentId) queryObj.parentId = parentId;
+
+    let query = Report.find(queryObj)
       .populate("parentId", "fullName email mobile")
-
       .populate({
         path: "courseId",
         select: "subject",
       })
-
       .populate("tutorId", "fullName")
-
       .sort({ createdAt: -1 });
 
     let reports = await query.skip(skip).limit(perPage);
 
+    
     if (search) {
       const s = search.toLowerCase();
 
@@ -80,7 +90,8 @@ export const getAdminReports = async (req, res) => {
       });
     }
 
-    const totalReports = await Report.countDocuments();
+   
+    const totalReports = await Report.countDocuments(queryObj);
 
     res.json({
       success: true,
@@ -125,20 +136,32 @@ export const markReportSolved = async (req, res) => {
   }
 };
 
+
+
 export const getAdminReviews = async (req, res) => {
   try {
-    const { page = 1, limit = 7, search = "", sort = "latest" } = req.query;
+    const {
+      page = 1,
+      limit = 5,
+      search = "",
+      sort = "latest",
+      tutorId = "",
+      parentId = "",
+    } = req.query;
 
     const currentPage = Number(page);
     const perPage = Number(limit);
     const skip = (currentPage - 1) * perPage;
 
-    let query = Review.find()
+    
+    const queryObj = {};
 
+    if (tutorId) queryObj.tutorId = tutorId;
+    if (parentId) queryObj.parentId = parentId;
+
+    let query = Review.find(queryObj)
       .populate("parentId", "fullName")
-
       .populate("tutorId", "fullName")
-
       .populate({
         path: "courseId",
         select: "subject studentId",
@@ -148,6 +171,7 @@ export const getAdminReviews = async (req, res) => {
         },
       });
 
+    
     if (sort === "highest") {
       query = query.sort({ rating: -1 });
     } else if (sort === "lowest") {
@@ -158,6 +182,7 @@ export const getAdminReviews = async (req, res) => {
 
     let reviews = await query.skip(skip).limit(perPage);
 
+  
     if (search) {
       const s = search.toLowerCase();
 
@@ -166,10 +191,15 @@ export const getAdminReviews = async (req, res) => {
         const subject = r.courseId?.subject?.toLowerCase() || "";
         const student = r.courseId?.studentId?.name?.toLowerCase() || "";
 
-        return parent.includes(s) || subject.includes(s) || student.includes(s);
+        return (
+          parent.includes(s) ||
+          subject.includes(s) ||
+          student.includes(s)
+        );
       });
     }
 
+   
     const tutorRatings = await Review.aggregate([
       {
         $group: {
@@ -180,7 +210,6 @@ export const getAdminReviews = async (req, res) => {
     ]);
 
     const ratingMap = {};
-
     tutorRatings.forEach((t) => {
       ratingMap[t._id.toString()] = Number(t.avgRating.toFixed(1));
     });
@@ -197,7 +226,8 @@ export const getAdminReviews = async (req, res) => {
       };
     });
 
-    const totalReviews = await Review.countDocuments();
+   
+    const totalReviews = await Review.countDocuments(queryObj);
 
     res.json({
       success: true,
@@ -210,13 +240,56 @@ export const getAdminReviews = async (req, res) => {
     });
   } catch (error) {
     console.error(error);
-
     res.status(500).json({
       success: false,
       message: "Failed to fetch reviews",
     });
   }
 };
+
+
+export const getFilterLists = async (req, res) => {
+  try {
+    const { type = "reviews" } = req.query;
+
+    let tutorIds = [];
+    let parentIds = [];
+
+    if (type === "reviews") {
+      tutorIds = await Review.distinct("tutorId");
+      parentIds = await Review.distinct("parentId");
+    }
+
+    if (type === "reports") {
+      tutorIds = await Report.distinct("tutorId");
+      parentIds = await Report.distinct("parentId");
+    }
+
+    const tutors = await Tutor.find({
+      _id: { $in: tutorIds },
+    })
+      .select("_id fullName")
+      .sort({ fullName: 1 });
+
+    const parents = await Parent.find({
+      _id: { $in: parentIds },
+    })
+      .select("_id fullName")
+      .sort({ fullName: 1 });
+
+    res.json({
+      success: true,
+      result: { tutors, parents },
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch filter data",
+    });
+  }
+};
+
 
 //classes
 export const createClass = async (req, res) => {
@@ -385,7 +458,7 @@ export const listStudents = async (req, res) => {
       grade = "",
       status = "",
       page = 1,
-      limit = 2,
+      limit = 5,
     } = req.query;
 
     const currentPage = Number(page);
@@ -453,41 +526,6 @@ export const getStudentDetails = async (req, res) => {
   }
 };
 
-export const updateParentStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-    const allowed = ["active", "blocked"];
-
-    if (!allowed.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status",
-      });
-    }
-
-    const parent = await Parent.findById(req.params.id);
-
-    if (!parent) {
-      return res.status(404).json({
-        success: false,
-        message: "Parent not found",
-      });
-    }
-
-    parent.status = status;
-    await parent.save();
-
-    res.status(200).json({
-      success: true,
-      message: `Parent ${status} successfully`,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to update parent status",
-    });
-  }
-};
 
 export const updateStudentStatus = async (req, res) => {
   try {
@@ -537,7 +575,7 @@ export const updateStudentStatus = async (req, res) => {
 export const getPendingTutors = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 1;
+    const limit = parseInt(req.query.limit) || 5;
 
     const skip = (page - 1) * limit;
 
@@ -670,7 +708,7 @@ export const listTutors = async (req, res) => {
       status = "",
       subject = "",
       page = 1,
-      limit = 2,
+      limit = 5,
     } = req.query;
 
     const query = {};
@@ -974,5 +1012,135 @@ export const updateSettings = async (req, res) => {
   res.json({
     success: true,
     result: settings,
+  });
+};
+
+
+export const getParents = async (req, res) => {
+  try {
+    const { page = 1, limit = 5, search = "", status = "" } = req.query;
+
+    const query = {
+      isDeleted: false, 
+    };
+
+   
+    if (search) {
+      query.fullName = { $regex: search, $options: "i" };
+    }
+
+   
+    if (status) {
+      query.status = status;
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [parents, total] = await Promise.all([
+      Parent.find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(Number(limit))
+        .select("-refreshToken"),
+
+      Parent.countDocuments(query),
+    ]);
+
+    res.json({
+      success: true,
+      result: parents,
+      pagination: {
+        page: Number(page),
+        pages: Math.ceil(total / limit),
+        total,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch parents",
+    });
+  }
+};
+
+//  UPDATE STATUS
+export const updateParentStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const parent = await Parent.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+
+    res.json({
+      success: true,
+      result: parent,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to update status",
+    });
+  }
+};
+
+
+
+export const getParentDetails = async (req, res) => {
+  try {
+    const parent = await Parent.findById(req.params.id)
+      .select("-refreshToken")
+      .lean();
+
+   
+    const students = await Student.find({
+      parentId: parent._id,
+      
+    }).select("name grade status");
+
+    res.json({
+      success: true,
+      result: {
+        ...parent,
+        students,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch parent details",
+    });
+  }
+};
+
+export const streamAdminNotifications = (req, res) => {
+  console.log("hii")
+  console.log("✅ ADMIN SSE CONNECTED");
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:4000");
+
+  const send = (data) => {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  };
+
+  const handler = (payload) => {
+    console.log("🔥 ADMIN RECEIVED EVENT");
+
+    send({
+      type: "NEW_PROFILE_REQUEST",
+      requestId: payload.requestId,
+    });
+  };
+
+  eventBus.on("tutorProfileEditRequested", handler);
+
+  req.on("close", () => {
+    eventBus.off("tutorProfileEditRequested", handler);
   });
 };

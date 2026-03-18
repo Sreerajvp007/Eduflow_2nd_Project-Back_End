@@ -74,3 +74,6 @@ export const addStudentSchema = Joi.object({
 
   photo: Joi.string().optional(),
 });
+
+
+

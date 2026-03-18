@@ -242,7 +242,7 @@ export const getParentPayments = async (req, res) => {
 
     const { studentId, page = 1, search, status, month } = req.query;
 
-    const limit = 10;
+    const limit = 5;
     const skip = (page - 1) * limit;
 
     let filter = { parentId };

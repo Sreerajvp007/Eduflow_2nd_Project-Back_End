@@ -8,13 +8,15 @@ import Payment from "../models/Payment.js";
 import PayoutRequest from "../models/PayoutRequest.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 import TutorProfileEditRequest from "../models/TutorProfileEditRequest.js";
+import eventBus from "../utils/eventBus.js";
+
 
 // students
 export const getMyStudents = async (req, res) => {
   try {
     const tutorId = new mongoose.Types.ObjectId(req.user.id);
 
-    const { page = 1, limit = 1, search = "", grade, status } = req.query;
+    const { page = 1, limit = 5, search = "", grade, status } = req.query;
 
     const skip = (page - 1) * limit;
 
@@ -106,7 +108,7 @@ export const getStudentCourses = async (req, res) => {
     const tutorId = req.user.id;
     const { studentId } = req.params;
 
-    const { page = 1, limit = 3 } = req.query;
+    const { page = 1, limit = 5 } = req.query;
 
     const currentPage = Number(page);
     const perPage = Number(limit);
@@ -151,7 +153,7 @@ export const getTutorReviews = async (req, res) => {
   try {
     const tutorId = req.user.id;
 
-    const { page = 1, limit = 6, search = "", sort = "latest" } = req.query;
+    const { page = 1, limit = 5, search = "", sort = "latest" } = req.query;
 
     const currentPage = Number(page);
     const perPage = Number(limit);
@@ -344,7 +346,7 @@ export const getTutorPaymentHistory = async (req, res) => {
     const tutorId = req.user.id;
 
     const page = Number(req.query.page) || 4;
-    const limit = 6;
+    const limit = 5;
     const skip = (page - 1) * limit;
 
     const payments = await Payment.aggregate([
@@ -550,7 +552,7 @@ export const getTutorManagedCourses = async (req, res) => {
   try {
     const tutorId = req.user.id;
 
-    const { page = 1, limit = 1, search = "", status = "all" } = req.query;
+    const { page = 1, limit = 5, search = "", status = "all" } = req.query;
 
     const currentPage = Number(page);
     const perPage = Number(limit);
@@ -816,7 +818,7 @@ export const getTutorSessions = async (req, res) => {
     const tutorId = req.user.id;
 
     const page = Number(req.query.page) || 1;
-    const limit = 10;
+    const limit = 5;
 
     const status = req.query.status;
     const search = req.query.search || "";
@@ -915,9 +917,12 @@ export const createSession = async (req, res) => {
   }
 };
 
+
+
 export const startSession = async (req, res) => {
   try {
-    const session = await Session.findById(req.params.id);
+    const session = await Session.findById(req.params.id)
+      .populate("courseId");
 
     if (!session) {
       return res.status(404).json({
@@ -930,17 +935,23 @@ export const startSession = async (req, res) => {
 
     await session.save();
 
+    
+    eventBus.emit("sessionStarted", {
+      courseId: session.courseId._id.toString(),
+      sessionId: session._id,
+    });
+
     res.json({
       success: true,
       result: session,
     });
+
   } catch (err) {
     res.status(500).json({
       message: "Failed to start session",
     });
   }
 };
-
 export const endSession = async (req, res) => {
   try {
     const session = await Session.findById(req.params.id);
@@ -986,6 +997,42 @@ export const cancelSession = async (req, res) => {
       success: true,
       message: "Session cancelled",
     });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+};
+
+export const resumeSession = async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.id);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "Session not found",
+      });
+    }
+
+    if (session.status !== "cancelled") {
+      return res.status(400).json({
+        success: false,
+        message: "Only cancelled sessions can be resumed",
+      });
+    }
+
+    session.status = "scheduled";
+
+    await session.save();
+
+    res.json({
+      success: true,
+      message: "Session resumed",
+      result: session,
+    });
+
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -1090,6 +1137,14 @@ export const blockAvailabilitySlot = async (req, res) => {
       });
     }
 
+   
+    if (slot.status === "booked") {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot block a booked slot",
+      });
+    }
+
     slot.status = "blocked";
 
     await tutor.save();
@@ -1098,6 +1153,7 @@ export const blockAvailabilitySlot = async (req, res) => {
       success: true,
       result: tutor.availability,
     });
+
   } catch (err) {
     res.status(500).json({
       success: false,
@@ -1105,7 +1161,6 @@ export const blockAvailabilitySlot = async (req, res) => {
     });
   }
 };
-
 export const unblockAvailabilitySlot = async (req, res) => {
   try {
     const { time } = req.body;
@@ -1236,9 +1291,10 @@ export const getTutorProfile = async (req, res) => {
   }
 };
 
+
+
 export const submitProfileEditRequest = async (req, res) => {
   try {
-    console.log("hello");
     const tutorId = req.user.id;
 
     const { fullName, mobile, teachingExperience, monthlyFee } = req.body;
@@ -1248,9 +1304,8 @@ export const submitProfileEditRequest = async (req, res) => {
     if (req.file) {
       const result = await uploadToCloudinary(
         req.file.buffer,
-        "tutor_profiles",
+        "tutor_profiles"
       );
-
       profileImage = result.secure_url;
     }
 
@@ -1262,6 +1317,11 @@ export const submitProfileEditRequest = async (req, res) => {
       monthlyFee,
       profileImage,
       status: "pending",
+    });
+
+    // 🔥🔥🔥 ADD THIS (MOST IMPORTANT)
+    eventBus.emit("tutorProfileEditRequested", {
+      requestId: request._id,
     });
 
     res.json({
@@ -1350,3 +1410,6 @@ export const getTutorDashboard = async (req, res) => {
     });
   }
 };
+
+
+

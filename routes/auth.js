@@ -21,7 +21,15 @@ import {
   adminLoginValidation,
   tutorSignupValidation,
   tutorLoginValidation,
+   sendParentOtpSchema,
+  verifyParentOtpSchema,
+  resendParentOtpSchema,
+  sendParentLoginOtpSchema,
+  verifyParentLoginOtpSchema,
+  resendParentLoginOtpSchema,
+
 } from "../validations/auth.js";
+
 
 const router = express.Router();
 
@@ -32,12 +40,12 @@ router.post("/tutor/signup", validate(tutorSignupValidation), tutorSignup);
 router.post("/tutor/login", validate(tutorLoginValidation), tutorLogin);
 router.post("/tutor/logout", tutorLogout);
 
-router.post("/parent/send-otp", sendParentOtp);
-router.post("/parent/verify-otp", verifyParentOtp);
-router.post("/parent/resend-otp", resendParentOtp);
-router.post("/parent/login/send-otp", sendParentLoginOtp);
-router.post("/parent/login/verify-otp", verifyParentLoginOtp);
-router.post("/parent/login/resend-otp", resendParentLoginOtp);
+router.post("/parent/send-otp",validate(sendParentOtpSchema), sendParentOtp);
+router.post("/parent/verify-otp",verifyParentOtp);
+router.post("/parent/resend-otp",  resendParentOtp);
+router.post("/parent/login/send-otp",validate(sendParentLoginOtpSchema), sendParentLoginOtp);
+router.post("/parent/login/verify-otp",  validate(verifyParentLoginOtpSchema),verifyParentLoginOtp);
+router.post("/parent/login/resend-otp", validate(resendParentLoginOtpSchema), resendParentLoginOtp);
 router.post("/parent/logout", parentLogout);
 
 router.get("/refresh", refresh);

@@ -15,7 +15,8 @@ import {
   updateStudent,
   getParentCourseOverview,
   fetchStudent,
-  getParentSessions
+  getParentSessions,
+  streamParentSessions
 } from "../controllers/parent.js";
 import {
   updateParentSchema,
@@ -59,5 +60,7 @@ router.post("/reviews", protect(["parent"]), addReview);
 router.post("/reports", protect(["parent"]), reportTutor);
 
 router.get("/sessions", protect(["parent"]), getParentSessions);
+
+router.get("/sessions/stream", streamParentSessions);
 
 export default router;

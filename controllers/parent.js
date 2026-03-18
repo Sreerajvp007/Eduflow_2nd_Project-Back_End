@@ -1,11 +1,11 @@
-import Parent from "../models/Parent.js";
-import Tutor from "../models/Tutor.js";
-import Student from "../models/Student.js";
-import Course from "../models/Course.js";
-import Session from "../models/Session.js";
-import Class from "../models/Class.js";
-import Report from "../models/Report.js";
-import Review from "../models/Review.js";
+import Parent from "../models/parent.js";
+import Tutor from "../models/tutor.js";
+import Student from "../models/student.js";
+import Course from "../models/course.js";
+import Session from "../models/session.js";
+import Class from "../models/class.js";
+import Report from "../models/report.js";
+import Review from "../models/review.js";
 import eventBus from "../utils/eventBus.js";
 
 export const getParentProfile = async (req, res) => {

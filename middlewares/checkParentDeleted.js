@@ -1,4 +1,4 @@
-import Parent from "../models/Parent.js";
+import Parent from "../models/parent.js";
 
 export const checkParentDeleted = async (req, res, next) => {
   try {

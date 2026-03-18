@@ -1,10 +1,10 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import Admin from "../models/Admin.js";
-import Tutor from "../models/Tutor.js";
-import Parent from "../models/Parent.js";
-import Student from "../models/Student.js";
-import Otp from "../models/Otp.js";
+import Admin from "../models/admin.js";
+import Tutor from "../models/tutor.js";
+import Parent from "../models/parent.js";
+import Student from "../models/student.js";
+import Otp from "../models/otp.js";
 import { generateOtp, hashOtp } from "../utils/generateOtp.js";
 import { accesstoken, refreshtoken } from "../utils/token.js";
 import sendEmail from "../utils/sendEmail.js";

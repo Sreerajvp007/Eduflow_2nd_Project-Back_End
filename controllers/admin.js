@@ -1,13 +1,13 @@
-import Tutor from "../models/Tutor.js";
-import Student from "../models/Student.js";
-import Course from "../models/Course.js";
-import Parent from "../models/Parent.js";
-import Review from "../models/Review.js";
-import Report from "../models/Report.js";
-import Class from "../models/Class.js";
-import PlatformSettings from "../models/PlatformSettings.js";
+import Tutor from "../models/tutor.js";
+import Student from "../models/student.js";
+import Course from "../models/course.js";
+import Parent from "../models/parent.js";
+import Review from "../models/review.js";
+import Report from "../models/report.js";
+import Class from "../models/class.js";
+import PlatformSettings from "../models/platformSettings.js";
 import Payment from "../models/payment.js";
-import TutorProfileEditRequest from "../models/TutorProfileEditRequest.js";
+import TutorProfileEditRequest from "../models/tutorProfileEditRequest.js";
 import eventBus from "../utils/eventBus.js";
 
 export const getAdminDashboardStats = async (req, res) => {

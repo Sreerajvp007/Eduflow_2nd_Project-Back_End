@@ -1,11 +1,11 @@
 import razorpay from "../config/razorpay.js";
 import crypto from "crypto";
-import Course from "../models/Course.js";
+import Course from "../models/course.js";
 import Payment from "../models/payment.js";
-import Student from "../models/Student.js";
-import TutorWallet from "../models/TutorWallet.js";
-import Tutor from "../models/Tutor.js";
-import PayoutRequest from "../models/PayoutRequest.js";
+import Student from "../models/student.js";
+import TutorWallet from "../models/tutorWallet.js";
+import Tutor from "../models/tutor.js";
+import PayoutRequest from "../models/payoutRequest.js";
 import axios from "axios";
 import { getCommission } from "../utils/getCommission.js";
 

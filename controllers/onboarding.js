@@ -1,5 +1,5 @@
-import Tutor from "../models/Tutor.js";
-import Class from "../models/Class.js";
+import Tutor from "../models/tutor.js";
+import Class from "../models/class.js";
 import { calculateProfileCompletion } from "../utils/calculateCompletion.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 

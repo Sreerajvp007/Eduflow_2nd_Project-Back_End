@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
-import Course from "../models/Course.js";
-import Session from "../models/Session.js";
-import Tutor from "../models/Tutor.js";
-import Review from "../models/Review.js";
-import TutorWallet from "../models/TutorWallet.js";
-import Payment from "../models/Payment.js";
-import PayoutRequest from "../models/PayoutRequest.js";
+import Course from "../models/course.js";
+import Session from "../models/session.js";
+import Tutor from "../models/tutor.js";
+import Review from "../models/review.js";
+import TutorWallet from "../models/tutorWallet.js";
+import Payment from "../models/payment.js";
+import PayoutRequest from "../models/payoutRequest.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
-import TutorProfileEditRequest from "../models/TutorProfileEditRequest.js";
+import TutorProfileEditRequest from "../models/tutorProfileEditRequest.js";
 import eventBus from "../utils/eventBus.js";
 
 

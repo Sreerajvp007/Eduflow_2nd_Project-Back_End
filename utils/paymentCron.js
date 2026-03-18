@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import Course from "../models/Course.js";
+import Course from "../models/course.js";
 
 console.log("Payment cron initialized");
 

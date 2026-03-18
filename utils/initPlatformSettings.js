@@ -1,4 +1,4 @@
-import PlatformSettings from "../models/PlatformSettings.js";
+import PlatformSettings from "../models/platformSettings.js";
 
 export const initPlatformSettings = async () => {
 

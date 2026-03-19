@@ -36,13 +36,23 @@ export const adminLogin = async (req, res) => {
     admin.refreshToken = refreshToken;
     await admin.save();
 
-    res.clearCookie("tutorRefreshToken");
-    res.clearCookie("parentRefreshToken");
+res.clearCookie("tutorRefreshToken", {
+  httpOnly: true,
+  sameSite: "None",
+  secure: true,
+});
+
+res.clearCookie("parentRefreshToken", {
+  httpOnly: true,
+  sameSite: "None",
+  secure: true,
+});;
 
     res.cookie("adminRefreshToken", refreshToken, {
       httpOnly: true,
-      secure: false,
-      samesite: "strict",
+       secure: true,  
+       sameSite: "None",
+       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 100,
     });
     return res.status(200).json({
@@ -68,20 +78,41 @@ export const adminLogin = async (req, res) => {
   }
 };
 
+// export const adminLogout = async (req, res) => {
+//   const token = req.cookies.refreshToken;
+
+//   if (token) {
+//     await Admin.findOneAndUpdate(
+//       { refreshToken: token },
+//       { refreshToken: null },
+//     );
+//   }
+//   res.clearCookie("refreshToken");
+//   return res.status(200).json({
+//     success: true,
+//     message: "Logged out successfully",
+//     result: null,
+//   });
+// };
 export const adminLogout = async (req, res) => {
-  const token = req.cookies.refreshToken;
+  const token = req.cookies.adminRefreshToken;
 
   if (token) {
     await Admin.findOneAndUpdate(
       { refreshToken: token },
-      { refreshToken: null },
+      { refreshToken: null }
     );
   }
-  res.clearCookie("refreshToken");
+
+  res.clearCookie("adminRefreshToken", {
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+  });
+
   return res.status(200).json({
     success: true,
     message: "Logged out successfully",
-    result: null,
   });
 };
 
@@ -119,8 +150,9 @@ export const tutorSignup = async (req, res) => {
 
     res.cookie("tutorRefreshToken", refreshToken, {
       httpOnly: true,
-      sameSite: "strict",
-      secure: false,
+      secure: true,  
+       sameSite: "None",
+       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -193,8 +225,9 @@ export const tutorLogin = async (req, res) => {
 
     res.cookie("tutorRefreshToken", refreshToken, {
       httpOnly: true,
-      sameSite: "strict",
-      secure: false,
+      secure: true,  
+       sameSite: "None",
+       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -380,8 +413,9 @@ export const verifyParentOtp = async (req, res) => {
 
     res.cookie("parentRefreshToken", refreshToken, {
       httpOnly: true,
-      sameSite: "strict",
-      secure: false,
+      secure: true,  
+       sameSite: "None",
+       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -549,8 +583,9 @@ export const verifyParentLoginOtp = async (req, res) => {
 
     res.cookie("parentRefreshToken", refreshToken, {
       httpOnly: true,
-      sameSite: "strict",
-      secure: false,
+      secure: true,  
+       sameSite: "None",
+       path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -713,8 +748,9 @@ export const parentLogout = async (req, res) => {
   try {
     res.clearCookie("parentRefreshToken", {
       httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",   // 🔥 FIX
+  secure: true, 
+      // secure: process.env.NODE_ENV === "production",
     });
 
     return res.status(200).json({

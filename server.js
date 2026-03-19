@@ -39,7 +39,7 @@ app.use(
 );
 
 
-app.options("*", cors());
+
 app.use(cookieParser());
 
 app.get("/", (req, res) => {

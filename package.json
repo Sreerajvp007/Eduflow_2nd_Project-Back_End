@@ -30,6 +30,7 @@
     "nodemailer": "^7.0.13",
     "razorpay": "^2.9.6",
     "redis": "^5.11.0",
+    "resend": "^6.9.4",
     "streamifier": "^0.1.1",
     "uuid": "^13.0.0"
   }

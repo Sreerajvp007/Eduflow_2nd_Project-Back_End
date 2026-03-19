@@ -21,19 +21,25 @@ const port = process.env.PORT;
 await initPlatformSettings();
 app.use(logger); 
 app.use(express.json());
+
 // app.use(
 //   cors({
-//     origin: "http://localhost:5173",
+//     origin: true,
 //     credentials: true,
-//   })
+//   }),
 // );
 app.use(
   cors({
-    origin: true,
+    origin: [
+      "http://localhost:4000",
+      "https://eduflow-2nd-project-front-end.vercel.app",
+    ],
     credentials: true,
-  }),
+  })
 );
 
+
+app.options("*", cors());
 app.use(cookieParser());
 
 app.get("/", (req, res) => {

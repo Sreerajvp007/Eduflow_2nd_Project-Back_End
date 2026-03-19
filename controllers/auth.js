@@ -38,22 +38,24 @@ export const adminLogin = async (req, res) => {
 
 res.clearCookie("tutorRefreshToken", {
   httpOnly: true,
-  sameSite: "None",
   secure: true,
+  sameSite: "None",
+  path: "/",
 });
 
 res.clearCookie("parentRefreshToken", {
-  httpOnly: true,
-  sameSite: "None",
+   httpOnly: true,
   secure: true,
+  sameSite: "None",
+  path: "/",
 });;
 
     res.cookie("adminRefreshToken", refreshToken, {
-      httpOnly: true,
-       secure: true,  
-       sameSite: "None",
-       path: "/",
-      maxAge: 7 * 24 * 60 * 60 * 100,
+       httpOnly: true,
+  secure: true,        
+  sameSite: "None",    
+  path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
     return res.status(200).json({
       success: true,
@@ -106,8 +108,9 @@ export const adminLogout = async (req, res) => {
 
   res.clearCookie("adminRefreshToken", {
     httpOnly: true,
-    sameSite: "None",
-    secure: true,
+  secure: true,
+  sameSite: "None",
+  path: "/",
   });
 
   return res.status(200).json({
@@ -149,10 +152,10 @@ export const tutorSignup = async (req, res) => {
     await tutor.save();
 
     res.cookie("tutorRefreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,  
-       sameSite: "None",
-       path: "/",
+          httpOnly: true,
+  secure: true,        
+  sameSite: "None",    
+  path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -224,10 +227,10 @@ export const tutorLogin = async (req, res) => {
     await tutor.save();
 
     res.cookie("tutorRefreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,  
-       sameSite: "None",
-       path: "/",
+         httpOnly: true,
+  secure: true,        
+  sameSite: "None",    
+  path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -264,7 +267,12 @@ export const tutorLogout = async (req, res) => {
       { refreshToken: null },
     );
   }
-  res.clearCookie("refreshToken");
+  res.clearCookie("refreshToken",{
+     httpOnly: true,
+  secure: true,
+  sameSite: "None",
+  path: "/",
+  });
   return res.status(200).json({
     success: true,
     message: "Logged out successfully",
@@ -412,10 +420,10 @@ export const verifyParentOtp = async (req, res) => {
     await parent.save();
 
     res.cookie("parentRefreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,  
-       sameSite: "None",
-       path: "/",
+          httpOnly: true,
+  secure: true,        
+  sameSite: "None",    
+  path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -582,10 +590,10 @@ export const verifyParentLoginOtp = async (req, res) => {
     await parent.save();
 
     res.cookie("parentRefreshToken", refreshToken, {
-      httpOnly: true,
-      secure: true,  
-       sameSite: "None",
-       path: "/",
+          httpOnly: true,
+  secure: true,        
+  sameSite: "None",    
+  path: "/",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -657,6 +665,7 @@ export const resendParentLoginOtp = async (req, res) => {
 
 export const refresh = async (req, res) => {
   try {
+     console.log("Cookies:", req.cookies); // 🔥 ADD HERE
     const { role } = req.query;
 
     let refreshToken;
@@ -748,9 +757,9 @@ export const parentLogout = async (req, res) => {
   try {
     res.clearCookie("parentRefreshToken", {
       httpOnly: true,
-      sameSite: "None",   // 🔥 FIX
-  secure: true, 
-      // secure: process.env.NODE_ENV === "production",
+  secure: true,
+  sameSite: "None",
+  path: "/",
     });
 
     return res.status(200).json({

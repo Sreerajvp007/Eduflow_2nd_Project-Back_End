@@ -33,6 +33,9 @@ app.use(
     origin: [
       "http://localhost:4000",
       "https://eduflow-2nd-project-front-end.vercel.app",
+
+      "https://www.eduflowclasses.online",
+      "https://eduflowclasses.online",
     ],
     credentials: true,
   })

@@ -594,13 +594,26 @@ export const getParentSessions = async (req, res) => {
   }
 };
 
-export const streamParentSessions = (req, res) => {
-  console.log("jjjj");
 
+
+export const streamParentSessions = (req, res) => {
+  const allowedOrigins = [
+    "https://www.eduflowclasses.online",
+    "https://eduflowclasses.online",
+    "https://eduflow-2nd-project-front-end.vercel.app",
+  ];
+
+  const origin = req.headers.origin;
+
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
-res.setHeader("Access-Control-Allow-Origin", process.env.CLIENT_URL);
+
   res.flushHeaders();
 
   console.log("✅ SSE CONNECTED");

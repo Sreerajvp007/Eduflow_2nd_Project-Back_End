@@ -9,6 +9,8 @@ import { generateOtp, hashOtp } from "../utils/generateOtp.js";
 import { accesstoken, refreshtoken } from "../utils/token.js";
 import sendEmail from "../utils/sendEmail.js";
 
+
+
 // admin login and logout
 export const adminLogin = async (req, res) => {
   try {
@@ -306,8 +308,8 @@ export const sendParentOtp = async (req, res) => {
       });
     }
 
-    // const otp = generateOtp();
-    const otp = "123456";
+    const otp = generateOtp();
+    
     const hashedOtp = hashOtp(otp);
 
     await Otp.findOneAndUpdate(

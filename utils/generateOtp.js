@@ -1,7 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import crypto from "crypto";
 
+
 export const generateOtp = () => {
+  console.log(process.env.RESEND_API_KEY);
   const uuid = uuidv4().replace(/\D/g, "");
   return uuid.substring(0, 6).padEnd(6, "0");
 };

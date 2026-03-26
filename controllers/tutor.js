@@ -738,6 +738,7 @@ export const saveLearningPlan = async (req, res) => {
           title: s.title,
           description: s.description,
           sessionDate: s.sessionDate,
+          startTime: course.timeSlot,
           status: "scheduled",
           channelName: `session_${sessionId}`,
         });

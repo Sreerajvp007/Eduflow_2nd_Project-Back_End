@@ -151,3 +151,94 @@ export const saveIdVerificationValidation = Joi.object({
     ],
   }),
 });
+
+export const saveBankDetailsValidation = Joi.object({
+
+  accountHolderName: Joi.string()
+    .trim()
+    .min(3)
+    .max(100)
+    .pattern(/^[A-Za-z\s]+$/)
+    .required()
+    .messages({
+      "string.empty": "Account holder name is required",
+      "string.pattern.base": "Name must contain only letters",
+    }),
+
+  accountNumber: Joi.string()
+    .pattern(/^\d{9,18}$/)
+    .required()
+    .messages({
+      "string.empty": "Account number is required",
+      "string.pattern.base": "Account number must be 9-18 digits",
+    }),
+
+  ifsc: Joi.string()
+    .uppercase()
+    .pattern(/^[A-Z]{4}0[A-Z0-9]{6}$/)
+    .required()
+    .messages({
+      "string.empty": "IFSC code is required",
+      "string.pattern.base": "Invalid IFSC code",
+    }),
+
+  bankName: Joi.string()
+    .trim()
+    .min(2)
+    .required()
+    .messages({
+      "string.empty": "Bank name is required",
+    }),
+
+
+  upiId: Joi.string()
+    .pattern(/^[\w.-]+@[\w]+$/)
+    .allow("")
+    .optional()
+    .messages({
+      "string.pattern.base": "Invalid UPI ID",
+    }),
+
+});
+
+export const updateProfileValidation = Joi.object({
+
+  fullName: Joi.string()
+    .trim()
+    .min(3)
+    .max(100)
+    .pattern(/^[A-Za-z\s]+$/)
+    .required()
+    .messages({
+      "string.empty": "Full name is required",
+      "string.pattern.base": "Name must contain only letters",
+      "string.min": "Name must be at least 3 characters",
+    }),
+
+  mobile: Joi.string()
+    .pattern(/^[6-9]\d{9}$/)
+    .required()
+    .messages({
+      "string.empty": "Mobile number is required",
+      "string.pattern.base": "Enter valid 10-digit mobile number",
+    }),
+
+  teachingExperience: Joi.number()
+    .min(0)
+    .max(50)
+    .required()
+    .messages({
+      "number.base": "Experience must be a number",
+      "number.min": "Experience cannot be negative",
+    }),
+
+  monthlyFee: Joi.number()
+    .min(0)
+    .max(100000)
+    .required()
+    .messages({
+      "number.base": "Fee must be a number",
+      "number.min": "Fee cannot be negative",
+    }),
+
+});

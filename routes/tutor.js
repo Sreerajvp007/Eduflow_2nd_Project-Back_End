@@ -50,6 +50,8 @@ import {
   saveTeachingInfoValidation,
   saveQualificationsValidation,
   saveIdVerificationValidation,
+  saveBankDetailsValidation,
+  updateProfileValidation
 } from "../validations/tutor.js";
 import {
   saveTutorBankDetails,
@@ -142,7 +144,7 @@ router.post(
 );
 router.get("/students", protect(["tutor"]), getTutorStudents);
 
-router.post("/bank-details", protect(["tutor"]), saveTutorBankDetails);
+router.post("/bank-details", protect(["tutor"]),validate(saveBankDetailsValidation),  saveTutorBankDetails);
 
 router.post(
   "/bank-details/verify",
@@ -161,6 +163,7 @@ router.post(
   "/profile-edit-request",
   protect(["tutor"]),
   uploadProfileImage.single("profileImage"),
+  validate(updateProfileValidation),
   submitProfileEditRequest,
 );
 router.get("/dashboard", protect(["tutor"]), getTutorDashboard);

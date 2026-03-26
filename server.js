@@ -1,5 +1,5 @@
+import "./config/loadEnv.js";
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import authRoute from "./routes/auth.js";
@@ -12,7 +12,7 @@ import "./utils/paymentCron.js";
 import "./utils/releaseTutorEarnings.js";
 import logger from "./middlewares/logger.js";
 import { initPlatformSettings } from "./utils/initPlatformSettings.js";
-dotenv.config();
+
 connectDB();
 
 

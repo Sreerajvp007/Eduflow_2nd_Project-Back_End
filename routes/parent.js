@@ -1,6 +1,5 @@
 import express from "express";
 import { protect } from "../middlewares/auth.js";
-import { checkParentDeleted } from "../middlewares/checkParentDeleted.js";
 import {
   getParentProfile,
   updateParentProfile,

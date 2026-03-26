@@ -500,11 +500,7 @@ export const saveTutorBankDetails = async (req, res) => {
     const { accountHolderName, accountNumber, ifsc, bankName, upiId } =
       req.body;
 
-    if (!accountHolderName || !accountNumber || !ifsc) {
-      return res.status(400).json({
-        message: "All bank fields are required",
-      });
-    }
+   
 
     const tutor = await Tutor.findById(tutorId);
 

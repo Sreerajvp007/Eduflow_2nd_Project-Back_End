@@ -616,7 +616,7 @@ export const streamParentSessions = (req, res) => {
 
   res.flushHeaders();
 
-  console.log("✅ SSE CONNECTED");
+  console.log(" SSE CONNECTED");
 
   const send = (data) => {
     res.write(`data: ${JSON.stringify(data)}\n\n`);
@@ -627,7 +627,7 @@ export const streamParentSessions = (req, res) => {
   }, 20000);
 
   const handler = (data) => {
-    console.log("🔥 EVENT RECEIVED IN SSE");
+    console.log(" EVENT RECEIVED IN SSE");
     send({ type: "SESSION_STARTED", ...data });
   };
 
